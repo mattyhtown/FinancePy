@@ -35,6 +35,23 @@ class TradingEnvironment:
         Parameters
         ----------
         action : int or float
+            The number of units to buy (positive) or sell (negative).
+
+        Raises
+        ------
+        TypeError
+            If action is not an int or float and cannot be coerced to float.
+        """
+        # Runtime type checking or coercion for action
+        if not isinstance(action, (int, float)):
+            try:
+                action = float(action)
+            except (TypeError, ValueError):
+                raise TypeError(f"Action must be an int or float, got {type(action).__name__}")
+
+        Parameters
+        ----------
+        action : int or float
             Positive values buy units, negative values sell units and ``0`` holds.
         """
         price = self.data.loc[self.current_step, "Close"]
