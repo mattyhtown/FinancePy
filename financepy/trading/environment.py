@@ -49,11 +49,6 @@ class TradingEnvironment:
             except (TypeError, ValueError):
                 raise TypeError(f"Action must be an int or float, got {type(action).__name__}")
 
-        Parameters
-        ----------
-        action : int or float
-            Positive values buy units, negative values sell units and ``0`` holds.
-        """
         price = self.data.loc[self.current_step, "Close"]
 
         if action != 0:
