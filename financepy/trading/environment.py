@@ -94,9 +94,7 @@ class TradingEnvironment:
 
     def portfolio_value(self) -> float:
         """Return the latest portfolio value."""
-        if not self.history:
-            return self.initial_cash
-        return self.history[-1]["value"]
+        return self.initial_cash if not self.history else self.history[-1]["value"]
 
     @property
     def current_price(self) -> float:
