@@ -1,31 +1,28 @@
-###############################################################################
 # Copyright (C) 2018, 2019, 2020 Dominic O'Kane
-###############################################################################
 
 import time
 import numpy as np
+
+import add_fp_to_path
+
+from FinTestCases import FinTestCases, global_test_case_mode
 from financepy.utils.stats import mean, stdev, correlation
-from FinTestCases import FinTestCases, globalTestCaseMode
-import sys
-sys.path.append("..")
+
+test_cases = FinTestCases(__file__, global_test_case_mode)
+
+########################################################################################
 
 
-test_cases = FinTestCases(__file__, globalTestCaseMode)
+def test_fin_statistics():
 
-###############################################################################
-
-
-def test_FinStatistics():
     seed = 1972
     np.random.seed(seed)
 
     num_trials = 1000000
-    x = np.random.normal(0.0, 1.0, size=(num_trials))
-    y = np.random.normal(0.0, 1.0, size=(num_trials))
+    x = np.random.normal(0.0, 1.0, size=num_trials)
+    y = np.random.normal(0.0, 1.0, size=num_trials)
 
-    ##########################################################################
     # DO NUMPY TIMINGS
-    ##########################################################################
 
     start = time.time()
 
@@ -53,7 +50,6 @@ def test_FinStatistics():
     test_cases.header("TIME")
     test_cases.print(elapsed)
 
-    ##########################################################################
     # DO STATS TIMINGS
 
     test_cases.header("l", "Mean", "SD")
@@ -84,8 +80,8 @@ def test_FinStatistics():
     test_cases.header("TIME")
     test_cases.print(elapsed)
 
-###############################################################################
 
+########################################################################################
 
-test_FinStatistics()
-test_cases.compareTestCases()
+test_fin_statistics()
+test_cases.compare_test_cases()

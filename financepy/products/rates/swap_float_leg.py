@@ -1,8 +1,12 @@
-###############################################################################
+########################################################################################
 # Copyright (C) 2018, 2019, 2020 Dominic O'Kane
-###############################################################################
+########################################################################################
+
+from typing import Union
+
 import numpy as np
 import pandas as pd
+
 
 from ...utils.error import FinError
 from ...utils.date import Date
@@ -20,7 +24,7 @@ from ...utils.helpers import (
 from ...utils.global_types import SwapTypes
 from ...market.curves.discount_curve import DiscountCurve
 
-###############################################################################
+########################################################################################
 
 
 class SwapFloatLeg:
@@ -31,7 +35,7 @@ class SwapFloatLeg:
     def __init__(
         self,
         effective_dt: Date,  # Date interest starts to accrue
-        end_dt: (Date, str),  # Date contract ends
+        end_dt: Union[Date, str],  # Date contract ends
         leg_type: SwapTypes,
         spread: float,
         freq_type: FrequencyTypes,
@@ -50,7 +54,7 @@ class SwapFloatLeg:
 
         check_argument_types(self.__init__, locals())
 
-        if type(end_dt) is Date:
+        if isinstance(end_dt, Date):
             self.termination_dt = end_dt
         else:
             self.termination_dt = effective_dt.add_tenor(end_dt)
@@ -67,7 +71,7 @@ class SwapFloatLeg:
         self.leg_type = leg_type
         self.freq_type = freq_type
         self.payment_lag = payment_lag
-        self.principal = 0.0
+        self.principal = principal
         self.notional = notional
         self.notional_array = []
         self.spread = spread
@@ -80,10 +84,15 @@ class SwapFloatLeg:
 
         self.start_accrued_dts = []
         self.end_accrued_dts = []
-        self.payment_dts = []
-        self.payments = []
         self.year_fracs = []
         self.accrued_days = []
+
+        self.rates = []
+        self.payment_dts = []
+        self.payments = []
+        self.payment_dfs = []
+        self.payment_pvs = []
+        self.cumulative_pvs = []
 
         self.generate_payment_dts()
 
@@ -173,7 +182,7 @@ class SwapFloatLeg:
         num_payments = len(self.payment_dts)
         first_payment = False
 
-        if not len(self.notional_array):
+        if not self.notional_array:
             self.notional_array = [self.notional] * num_payments
 
         index_basis = index_curve.dc_type
@@ -189,7 +198,7 @@ class SwapFloatLeg:
                 end_accrued_dt = self.end_accrued_dts[i_pmnt]
                 pay_alpha = self.year_fracs[i_pmnt]
 
-                (index_alpha, num, _) = index_day_counter.year_frac(
+                (index_alpha, _, _) = index_day_counter.year_frac(
                     start_accrued_dt, end_accrued_dt
                 )
 
@@ -239,8 +248,8 @@ class SwapFloatLeg:
 
         if pv_only:
             return leg_pv
-        else:
-            return leg_pv, self._cashflow_report_from_cached_values()
+
+        return leg_pv, self._cashflow_report_from_cached_values()
 
     ###########################################################################
 
@@ -384,4 +393,4 @@ class SwapFloatLeg:
         print(self)
 
 
-###############################################################################
+########################################################################################

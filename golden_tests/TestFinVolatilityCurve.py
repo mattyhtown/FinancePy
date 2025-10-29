@@ -1,24 +1,22 @@
-###############################################################################
 # Copyright (C) 2018, 2019, 2020 Dominic O'Kane
-###############################################################################
 
 import numpy as np
+
+import add_fp_to_path
+
 from financepy.market.volatility.equity_vol_curve import EquityVolCurve
 from financepy.utils.date import Date
-from FinTestCases import FinTestCases, globalTestCaseMode
-import sys
 
-sys.path.append("..")
+from FinTestCases import FinTestCases, global_test_case_mode
 
-
-test_cases = FinTestCases(__file__, globalTestCaseMode)
+test_cases = FinTestCases(__file__, global_test_case_mode)
 
 PLOT_GRAPHS = False
 
-###############################################################################
+########################################################################################
 
 
-def test_FinVolatilityCurve():
+def test_fin_volatility_curve():
 
     value_dt = Date(20, 6, 2012)
     expiry_dt = Date(20, 12, 2012)
@@ -37,8 +35,7 @@ def test_FinVolatilityCurve():
         plt.show()
 
 
-###############################################################################
+########################################################################################
 
-
-test_FinVolatilityCurve()
-test_cases.compareTestCases()
+test_fin_volatility_curve()
+test_cases.compare_test_cases()

@@ -17,7 +17,7 @@ from ...utils.calendar import BusDayAdjustTypes
 from ...utils.calendar import DateGenRuleTypes
 from ...utils.day_count import DayCountTypes
 from ...utils.frequency import FrequencyTypes
-from ...utils.global_vars import g_days_in_year
+from ...utils.global_vars import G_DAYS_IN_YEARS
 from ...utils.math import ONE_MILLION
 from ...utils.error import FinError
 from ...utils.helpers import label_to_string, check_argument_types
@@ -37,7 +37,7 @@ from ...utils.global_types import OptionTypes
 from ...utils.global_types import SwapTypes
 from ...utils.global_types import FinExerciseTypes
 
-###############################################################################
+########################################################################################
 
 
 class IborSwaption:
@@ -135,8 +135,8 @@ class IborSwaption:
         # date that makes the forward swap worth par including principal
         s = swap.swap_rate(value_dt, discount_curve)
 
-        t_exp = (self.exercise_dt - self.settle_dt) / g_days_in_year
-        t_mat = (self.maturity_dt - self.settle_dt) / g_days_in_year
+        t_exp = (self.exercise_dt - self.settle_dt) / G_DAYS_IN_YEARS
+        t_mat = (self.maturity_dt - self.settle_dt) / G_DAYS_IN_YEARS
 
         # Discounting is done via the PV01 annuity so no discounting in Black
         df = 1.0
@@ -158,7 +158,7 @@ class IborSwaption:
             # Only flows occurring after option expiry are counted.
             # Flows on the expiry date are not included
             if flow_dt > self.exercise_dt:
-                cpn_time = (flow_dt - value_dt) / g_days_in_year
+                cpn_time = (flow_dt - value_dt) / G_DAYS_IN_YEARS
                 cpn_flow = swap.fixed_leg.payments[i_flow] / self.notional
                 cpn_times.append(cpn_time)
                 cpn_flows.append(cpn_flow)
@@ -166,8 +166,8 @@ class IborSwaption:
         cpn_times = np.array(cpn_times)
         cpn_flows = np.array(cpn_flows)
 
-        df_times = discount_curve._times
-        df_values = discount_curve._dfs
+        df_times = discount_curve.times
+        df_values = discount_curve.dfs
 
         if np.any(cpn_times < 0.0):
             raise FinError("No cpn times can be before the value date.")
@@ -336,10 +336,11 @@ class IborSwaption:
             value_dt, swap_rate, self.fixed_freq_type
         )
 
-        t_exp = (self.exercise_dt - self.settle_dt) / g_days_in_year
+        t_exp = (self.exercise_dt - self.settle_dt) / G_DAYS_IN_YEARS
 
         # Discounting is done via the PV01 annuity so no discounting in Black
         df = 1.0
+        swaption_price = 0.0
 
         if isinstance(model, Black):
 
@@ -375,7 +376,7 @@ class IborSwaption:
     ###########################################################################
 
     def print_swap_fixed_leg(self):
-
+        """Print the present value of the fixed leg of the underlying swap."""
         if self.underlying_swap is None:
             raise FinError("Underlying swap has not been set. Do a valuation.")
 
@@ -384,7 +385,7 @@ class IborSwaption:
     ###########################################################################
 
     def print_swap_float_leg(self):
-
+        """Print the present value of the floating leg of the underlying swap."""
         if self.underlying_swap is None:
             raise FinError("Underlying swap has not been set. Do a valuation.")
 
@@ -422,4 +423,4 @@ class IborSwaption:
         print(self)
 
 
-###############################################################################
+########################################################################################

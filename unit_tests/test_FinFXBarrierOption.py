@@ -1,6 +1,4 @@
-###############################################################################
 # Copyright (C) 2018, 2019, 2020 Dominic O'Kane
-###############################################################################
 
 from financepy.utils.date import Date
 from financepy.market.curves.discount_curve_flat import DiscountCurveFlat
@@ -22,28 +20,31 @@ notional = 100.0
 notional_currency = "USD"
 
 drift = dom_interest_rate - for_interest_rate
-scheme = FinGBMNumericalScheme.ANTITHETIC
-process_type = ProcessTypes.GBM
+scheme = FinGBMNumericalScheme.ANTITHETIC_SCHEME
+process_type = ProcessTypes.GBM_PROCESS
 domestic_curve = DiscountCurveFlat(value_dt, dom_interest_rate)
 foreign_curve = DiscountCurveFlat(value_dt, for_interest_rate)
 model = BlackScholes(volatility)
-num_observations_per_year = 100
+num_obs_per_year = 100
 
-B = 105.0
-K = 100.0
+b = 105.0
+k = 100.0
+
+########################################################################################
 
 
-def test_DOWN_AND_OUT_CALL():
+def test_down_and_out_call():
+
     spot_fx_rate = 50
-    option_type = FinFXBarrierTypes.DOWN_AND_OUT_CALL
+    opt_type = FinFXBarrierTypes.DOWN_AND_OUT_CALL
 
     barrier_option = FXBarrierOption(
         expiry_dt,
-        K,
+        k,
         currency_pair,
-        option_type,
-        B,
-        num_observations_per_year,
+        opt_type,
+        b,
+        num_obs_per_year,
         notional,
         notional_currency,
     )
@@ -70,17 +71,21 @@ def test_DOWN_AND_OUT_CALL():
     assert round(theta, 4) == 0.0000
 
 
-def test_DOWN_AND_IN_CALL():
+########################################################################################
+
+
+def test_down_and_in_call():
+
     spot_fx_rate = 100
-    option_type = FinFXBarrierTypes.DOWN_AND_IN_CALL
+    opt_type = FinFXBarrierTypes.DOWN_AND_IN_CALL
 
     barrier_option = FXBarrierOption(
         expiry_dt,
-        K,
+        k,
         currency_pair,
-        option_type,
-        B,
-        num_observations_per_year,
+        opt_type,
+        b,
+        num_obs_per_year,
         notional,
         notional_currency,
     )
@@ -107,17 +112,21 @@ def test_DOWN_AND_IN_CALL():
     assert round(theta, 4) == -5.0924
 
 
-def test_UP_AND_OUT_CALL():
+########################################################################################
+
+
+def test_up_and_out_call():
+
     spot_fx_rate = 50
-    option_type = FinFXBarrierTypes.UP_AND_OUT_CALL
+    opt_type = FinFXBarrierTypes.UP_AND_OUT_CALL
 
     barrier_option = FXBarrierOption(
         expiry_dt,
-        K,
+        k,
         currency_pair,
-        option_type,
-        B,
-        num_observations_per_year,
+        opt_type,
+        b,
+        num_obs_per_year,
         notional,
         notional_currency,
     )
@@ -144,17 +153,21 @@ def test_UP_AND_OUT_CALL():
     assert round(theta, 4) == -0.0015
 
 
-def test_UP_AND_IN_CALL():
+########################################################################################
+
+
+def test_up_and_in_call():
+
     spot_fx_rate = 100
-    option_type = FinFXBarrierTypes.UP_AND_IN_CALL
+    opt_type = FinFXBarrierTypes.UP_AND_IN_CALL
 
     barrier_option = FXBarrierOption(
         expiry_dt,
-        K,
+        k,
         currency_pair,
-        option_type,
-        B,
-        num_observations_per_year,
+        opt_type,
+        b,
+        num_obs_per_year,
         notional,
         notional_currency,
     )
@@ -181,17 +194,21 @@ def test_UP_AND_IN_CALL():
     assert round(theta, 4) == -5.1229
 
 
-def test_UP_AND_OUT_PUT():
+########################################################################################
+
+
+def test_up_and_out_put():
+
     spot_fx_rate = 50
-    option_type = FinFXBarrierTypes.UP_AND_OUT_PUT
+    opt_type = FinFXBarrierTypes.UP_AND_OUT_PUT
 
     barrier_option = FXBarrierOption(
         expiry_dt,
-        K,
+        k,
         currency_pair,
-        option_type,
-        B,
-        num_observations_per_year,
+        opt_type,
+        b,
+        num_obs_per_year,
         notional,
         notional_currency,
     )
@@ -218,17 +235,21 @@ def test_UP_AND_OUT_PUT():
     assert round(theta, 4) == 3.7654
 
 
-def test_UP_AND_IN_PUT():
+########################################################################################
+
+
+def test_up_and_in_put():
+
     spot_fx_rate = 100
-    option_type = FinFXBarrierTypes.UP_AND_IN_PUT
+    opt_type = FinFXBarrierTypes.UP_AND_IN_PUT
 
     barrier_option = FXBarrierOption(
         expiry_dt,
-        K,
+        k,
         currency_pair,
-        option_type,
-        B,
-        num_observations_per_year,
+        opt_type,
+        b,
+        num_obs_per_year,
         notional,
         notional_currency,
     )
@@ -255,17 +276,21 @@ def test_UP_AND_IN_PUT():
     assert round(theta, 4) == -2.3502
 
 
-def test_DOWN_AND_OUT_PUT():
+########################################################################################
+
+
+def test_down_and_out_put():
+
     spot_fx_rate = 50
-    option_type = FinFXBarrierTypes.DOWN_AND_OUT_PUT
+    opt_type = FinFXBarrierTypes.DOWN_AND_OUT_PUT
 
     barrier_option = FXBarrierOption(
         expiry_dt,
-        K,
+        k,
         currency_pair,
-        option_type,
-        B,
-        num_observations_per_year,
+        opt_type,
+        b,
+        num_obs_per_year,
         notional,
         notional_currency,
     )
@@ -292,17 +317,21 @@ def test_DOWN_AND_OUT_PUT():
     assert round(theta, 4) == 0.0000
 
 
-def test_DOWN_AND_IN_PUT():
+########################################################################################
+
+
+def test_down_and_in_put():
+
     spot_fx_rate = 100
-    option_type = FinFXBarrierTypes.DOWN_AND_IN_PUT
+    opt_type = FinFXBarrierTypes.DOWN_AND_IN_PUT
 
     barrier_option = FXBarrierOption(
         expiry_dt,
-        K,
+        k,
         currency_pair,
-        option_type,
-        B,
-        num_observations_per_year,
+        opt_type,
+        b,
+        num_obs_per_year,
         notional,
         notional_currency,
     )

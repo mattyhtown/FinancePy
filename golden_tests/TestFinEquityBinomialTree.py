@@ -1,29 +1,32 @@
-###############################################################################
 # Copyright (C) 2018, 2019, 2020 Dominic O'Kane
-###############################################################################
-
-import sys
-sys.path.append("..")
 
 import time
 import numpy as np
+
+import add_fp_to_path
+
 from financepy.products.equity.equity_binomial_tree import EquityBinomialTree
-from financepy.products.equity.equity_binomial_tree import EquityTreeExerciseTypes
-from financepy.products.equity.equity_binomial_tree import EquityTreePayoffTypes
+from financepy.products.equity.equity_binomial_tree import (
+    EquityTreeExerciseTypes,
+)
+from financepy.products.equity.equity_binomial_tree import (
+    EquityTreePayoffTypes,
+)
 from financepy.products.equity.equity_vanilla_option import EquityVanillaOption
 from financepy.utils.global_types import OptionTypes
 from financepy.utils.date import Date
 from financepy.models.black_scholes import BlackScholes
 from financepy.market.curves.discount_curve_flat import DiscountCurveFlat
-from FinTestCases import FinTestCases, globalTestCaseMode
 
 
-test_cases = FinTestCases(__file__, globalTestCaseMode)
+from FinTestCases import FinTestCases, global_test_case_mode
 
-###############################################################################
+test_cases = FinTestCases(__file__, global_test_case_mode)
+
+########################################################################################
 
 
-def test_FinBinomialTree():
+def test_fin_binomial_tree():
 
     stock_price = 50.0
     risk_free_rate = 0.06
@@ -43,18 +46,19 @@ def test_FinBinomialTree():
 
     test_cases.banner("================== EUROPEAN PUT =======================")
 
-    put_option = EquityVanillaOption(
-        expiry_dt,
-        strike_price,
-        OptionTypes.EUROPEAN_PUT)
-    value = put_option.value(value_dt, stock_price,
-                             discount_curve, dividend_curve, model)
-    delta = put_option.delta(value_dt, stock_price,
-                             discount_curve, dividend_curve, model)
-    gamma = put_option.gamma(value_dt, stock_price,
-                             discount_curve, dividend_curve, model)
-    theta = put_option.theta(value_dt, stock_price,
-                             discount_curve, dividend_curve, model)
+    put_option = EquityVanillaOption(expiry_dt, strike_price, OptionTypes.EUROPEAN_PUT)
+    value = put_option.value(
+        value_dt, stock_price, discount_curve, dividend_curve, model
+    )
+    delta = put_option.delta(
+        value_dt, stock_price, discount_curve, dividend_curve, model
+    )
+    gamma = put_option.gamma(
+        value_dt, stock_price, discount_curve, dividend_curve, model
+    )
+    theta = put_option.theta(
+        value_dt, stock_price, discount_curve, dividend_curve, model
+    )
     test_cases.header("BS Value", "BS Delta", "BS Gamma", "BS Theta")
     test_cases.print(value, delta, gamma, theta)
 
@@ -78,7 +82,8 @@ def test_FinBinomialTree():
             expiry_dt,
             payoff,
             exercise,
-            params)
+            params,
+        )
         end = time.time()
         duration = end - start
         test_cases.print(num_steps, results, duration)
@@ -105,26 +110,29 @@ def test_FinBinomialTree():
             expiry_dt,
             payoff,
             exercise,
-            params)
+            params,
+        )
         end = time.time()
         duration = end - start
         test_cases.print(num_steps, results, duration)
 
-    test_cases.banner(
-        "================== EUROPEAN CALL =======================")
+    test_cases.banner("================== EUROPEAN CALL =======================")
 
     call_option = EquityVanillaOption(
-        expiry_dt,
-        strike_price,
-        OptionTypes.EUROPEAN_CALL)
-    value = call_option.value(value_dt, stock_price,
-                              discount_curve, dividend_curve, model)
-    delta = call_option.delta(value_dt, stock_price,
-                              discount_curve, dividend_curve, model)
-    gamma = call_option.gamma(value_dt, stock_price,
-                              discount_curve, dividend_curve, model)
-    theta = call_option.theta(value_dt, stock_price,
-                              discount_curve, dividend_curve, model)
+        expiry_dt, strike_price, OptionTypes.EUROPEAN_CALL
+    )
+    value = call_option.value(
+        value_dt, stock_price, discount_curve, dividend_curve, model
+    )
+    delta = call_option.delta(
+        value_dt, stock_price, discount_curve, dividend_curve, model
+    )
+    gamma = call_option.gamma(
+        value_dt, stock_price, discount_curve, dividend_curve, model
+    )
+    theta = call_option.theta(
+        value_dt, stock_price, discount_curve, dividend_curve, model
+    )
     test_cases.header("BS Value", "BS Delta", "BS Gamma", "BS Theta")
     test_cases.print(value, delta, gamma, theta)
 
@@ -148,14 +156,14 @@ def test_FinBinomialTree():
             expiry_dt,
             payoff,
             exercise,
-            params)
+            params,
+        )
 
         end = time.time()
         duration = end - start
         test_cases.print(num_steps, results, duration)
 
-    test_cases.banner(
-        "================== AMERICAN CALL =======================")
+    test_cases.banner("================== AMERICAN CALL =======================")
 
     payoff = EquityTreePayoffTypes.VANILLA_OPTION
     exercise = EquityTreeExerciseTypes.AMERICAN
@@ -177,14 +185,15 @@ def test_FinBinomialTree():
             expiry_dt,
             payoff,
             exercise,
-            params)
+            params,
+        )
 
         end = time.time()
         duration = end - start
         test_cases.print(num_steps, results, duration)
 
-###############################################################################
 
+########################################################################################
 
-test_FinBinomialTree()
-test_cases.compareTestCases()
+test_fin_binomial_tree()
+test_cases.compare_test_cases()

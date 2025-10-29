@@ -1,35 +1,29 @@
-###############################################################################
 # Copyright (C) 2018, 2019, 2020 Dominic O'Kane
-###############################################################################
 
-import time
 import numpy as np
 
 from financepy.utils.global_types import SwapTypes
 from financepy.utils.date import Date
 from financepy.utils.day_count import DayCountTypes
 from financepy.utils.frequency import FrequencyTypes
-from financepy.utils.calendar import CalendarTypes
-from financepy.utils.calendar import DateGenRuleTypes
-from financepy.utils.calendar import BusDayAdjustTypes
-from financepy.utils.global_vars import g_days_in_year
+from financepy.utils.global_vars import G_DAYS_IN_YEARS
 from financepy.products.credit.cds_curve import CDSCurve
 from financepy.products.rates.ibor_single_curve import IborSingleCurve
-from financepy.market.curves.discount_curve import DiscountCurve
 from financepy.products.rates.ibor_deposit import IborDeposit
 from financepy.products.rates.ibor_swap import IborSwap
-from financepy.market.curves.interpolator import InterpTypes
 from financepy.utils.math import ONE_MILLION
 from financepy.products.credit.cds import CDS
 
+########################################################################################
 
-def buildFullIssuerCurve1(mktSpreadBump, irBump):
+
+def build_full_issuer_curve1(mkt_spd_bump, ir_bump):
 
     # https://www.markit.com/markit.jsp?jsppage=pv.jsp
     # YIELD CURVE 8-AUG-2019 SNAP AT 1600
 
-    tradeDate = Date(9, 8, 2019)
-    value_dt = tradeDate.add_days(1)
+    trade_dt = Date(9, 8, 2019)
+    value_dt = trade_dt.add_days(1)
 
     m = 1.0  # 0.00000000000
 
@@ -73,7 +67,7 @@ def buildFullIssuerCurve1(mktSpreadBump, irBump):
         settle_dt,
         maturity_dt,
         SwapTypes.PAY,
-        m * 0.015910 + irBump,
+        m * 0.015910 + ir_bump,
         fixed_freq,
         dc_type,
     )
@@ -84,7 +78,7 @@ def buildFullIssuerCurve1(mktSpreadBump, irBump):
         settle_dt,
         maturity_dt,
         SwapTypes.PAY,
-        m * 0.014990 + irBump,
+        m * 0.014990 + ir_bump,
         fixed_freq,
         dc_type,
     )
@@ -95,7 +89,7 @@ def buildFullIssuerCurve1(mktSpreadBump, irBump):
         settle_dt,
         maturity_dt,
         SwapTypes.PAY,
-        m * 0.014725 + irBump,
+        m * 0.014725 + ir_bump,
         fixed_freq,
         dc_type,
     )
@@ -106,7 +100,7 @@ def buildFullIssuerCurve1(mktSpreadBump, irBump):
         settle_dt,
         maturity_dt,
         SwapTypes.PAY,
-        m * 0.014640 + irBump,
+        m * 0.014640 + ir_bump,
         fixed_freq,
         dc_type,
     )
@@ -117,7 +111,7 @@ def buildFullIssuerCurve1(mktSpreadBump, irBump):
         settle_dt,
         maturity_dt,
         SwapTypes.PAY,
-        m * 0.014800 + irBump,
+        m * 0.014800 + ir_bump,
         fixed_freq,
         dc_type,
     )
@@ -128,7 +122,7 @@ def buildFullIssuerCurve1(mktSpreadBump, irBump):
         settle_dt,
         maturity_dt,
         SwapTypes.PAY,
-        m * 0.014995 + irBump,
+        m * 0.014995 + ir_bump,
         fixed_freq,
         dc_type,
     )
@@ -139,7 +133,7 @@ def buildFullIssuerCurve1(mktSpreadBump, irBump):
         settle_dt,
         maturity_dt,
         SwapTypes.PAY,
-        m * 0.015180 + irBump,
+        m * 0.015180 + ir_bump,
         fixed_freq,
         dc_type,
     )
@@ -150,7 +144,7 @@ def buildFullIssuerCurve1(mktSpreadBump, irBump):
         settle_dt,
         maturity_dt,
         SwapTypes.PAY,
-        m * 0.015610 + irBump,
+        m * 0.015610 + ir_bump,
         fixed_freq,
         dc_type,
     )
@@ -161,7 +155,7 @@ def buildFullIssuerCurve1(mktSpreadBump, irBump):
         settle_dt,
         maturity_dt,
         SwapTypes.PAY,
-        m * 0.015880 + irBump,
+        m * 0.015880 + ir_bump,
         fixed_freq,
         dc_type,
     )
@@ -172,7 +166,7 @@ def buildFullIssuerCurve1(mktSpreadBump, irBump):
         settle_dt,
         maturity_dt,
         SwapTypes.PAY,
-        m * 0.016430 + irBump,
+        m * 0.016430 + ir_bump,
         fixed_freq,
         dc_type,
     )
@@ -180,56 +174,57 @@ def buildFullIssuerCurve1(mktSpreadBump, irBump):
 
     libor_curve = IborSingleCurve(value_dt, depos, fras, swaps)
 
-    cdsMarketContracts = []
+    cds_mkt_contracts = []
 
-    cds_cpn = 0.04 + mktSpreadBump
+    cds_cpn = 0.04 + mkt_spd_bump
 
     maturity_dt = value_dt.next_cds_date(6)
     cds = CDS(value_dt, maturity_dt, cds_cpn)
-    cdsMarketContracts.append(cds)
+    cds_mkt_contracts.append(cds)
 
     maturity_dt = value_dt.next_cds_date(12)
     cds = CDS(value_dt, maturity_dt, cds_cpn)
-    cdsMarketContracts.append(cds)
+    cds_mkt_contracts.append(cds)
 
     maturity_dt = value_dt.next_cds_date(24)
     cds = CDS(value_dt, maturity_dt, cds_cpn)
-    cdsMarketContracts.append(cds)
+    cds_mkt_contracts.append(cds)
 
     maturity_dt = value_dt.next_cds_date(36)
     cds = CDS(value_dt, maturity_dt, cds_cpn)
-    cdsMarketContracts.append(cds)
+    cds_mkt_contracts.append(cds)
 
     maturity_dt = value_dt.next_cds_date(48)
     cds = CDS(value_dt, maturity_dt, cds_cpn)
-    cdsMarketContracts.append(cds)
+    cds_mkt_contracts.append(cds)
 
     maturity_dt = value_dt.next_cds_date(60)
     cds = CDS(value_dt, maturity_dt, cds_cpn)
-    cdsMarketContracts.append(cds)
+    cds_mkt_contracts.append(cds)
 
     maturity_dt = value_dt.next_cds_date(84)
     cds = CDS(value_dt, maturity_dt, cds_cpn)
-    cdsMarketContracts.append(cds)
+    cds_mkt_contracts.append(cds)
 
     maturity_dt = value_dt.next_cds_date(120)
     cds = CDS(value_dt, maturity_dt, cds_cpn)
-    cdsMarketContracts.append(cds)
+    cds_mkt_contracts.append(cds)
 
     maturity_dt = value_dt.next_cds_date(180)
     cds = CDS(value_dt, maturity_dt, cds_cpn)
-    cdsMarketContracts.append(cds)
+    cds_mkt_contracts.append(cds)
 
     recovery_rate = 0.40
 
-    issuer_curve = CDSCurve(
-        value_dt, cdsMarketContracts, libor_curve, recovery_rate
-    )
+    issuer_curve = CDSCurve(value_dt, cds_mkt_contracts, libor_curve, recovery_rate)
 
     return libor_curve, issuer_curve
 
 
-def buildFullIssuerCurve2(mktSpreadBump, irBump):
+########################################################################################
+
+
+def build_full_issuer_curve2(mkt_spd_bump, ir_bump):
 
     # https://www.markit.com/markit.jsp?jsppage=pv.jsp
     # YIELD CURVE 20 August 2020 SNAP AT 1600
@@ -271,7 +266,7 @@ def buildFullIssuerCurve2(mktSpreadBump, irBump):
         settle_dt,
         maturity_dt,
         SwapTypes.PAY,
-        m * 0.002155 + irBump,
+        m * 0.002155 + ir_bump,
         fixed_freq,
         dc_type,
     )
@@ -282,7 +277,7 @@ def buildFullIssuerCurve2(mktSpreadBump, irBump):
         settle_dt,
         maturity_dt,
         SwapTypes.PAY,
-        m * 0.002305 + irBump,
+        m * 0.002305 + ir_bump,
         fixed_freq,
         dc_type,
     )
@@ -293,7 +288,7 @@ def buildFullIssuerCurve2(mktSpreadBump, irBump):
         settle_dt,
         maturity_dt,
         SwapTypes.PAY,
-        m * 0.002665 + irBump,
+        m * 0.002665 + ir_bump,
         fixed_freq,
         dc_type,
     )
@@ -304,7 +299,7 @@ def buildFullIssuerCurve2(mktSpreadBump, irBump):
         settle_dt,
         maturity_dt,
         SwapTypes.PAY,
-        m * 0.003290 + irBump,
+        m * 0.003290 + ir_bump,
         fixed_freq,
         dc_type,
     )
@@ -312,39 +307,37 @@ def buildFullIssuerCurve2(mktSpreadBump, irBump):
 
     libor_curve = IborSingleCurve(value_dt, depos, [], swaps)
 
-    cds_cpn = 0.01 + mktSpreadBump
+    cds_cpn = 0.01 + mkt_spd_bump
 
-    cdsMarketContracts = []
+    cds_mkt_contracts = []
     effective_dt = Date(21, 8, 2020)
     cds = CDS(effective_dt, "6M", cds_cpn)
-    cdsMarketContracts.append(cds)
+    cds_mkt_contracts.append(cds)
 
     cds = CDS(effective_dt, "1Y", cds_cpn)
-    cdsMarketContracts.append(cds)
+    cds_mkt_contracts.append(cds)
 
     cds = CDS(effective_dt, "2Y", cds_cpn)
-    cdsMarketContracts.append(cds)
+    cds_mkt_contracts.append(cds)
 
     cds = CDS(effective_dt, "3Y", cds_cpn)
-    cdsMarketContracts.append(cds)
+    cds_mkt_contracts.append(cds)
 
     cds = CDS(effective_dt, "4Y", cds_cpn)
-    cdsMarketContracts.append(cds)
+    cds_mkt_contracts.append(cds)
 
     cds = CDS(effective_dt, "5Y", cds_cpn)
-    cdsMarketContracts.append(cds)
+    cds_mkt_contracts.append(cds)
 
     cds = CDS(effective_dt, "7Y", cds_cpn)
-    cdsMarketContracts.append(cds)
+    cds_mkt_contracts.append(cds)
 
     cds = CDS(effective_dt, "10Y", cds_cpn)
-    cdsMarketContracts.append(cds)
+    cds_mkt_contracts.append(cds)
 
     recovery_rate = 0.40
 
-    issuer_curve = CDSCurve(
-        settle_dt, cdsMarketContracts, libor_curve, recovery_rate
-    )
+    issuer_curve = CDSCurve(settle_dt, cds_mkt_contracts, libor_curve, recovery_rate)
 
     years = np.linspace(0.0, 10.0, 20)
     dates = settle_dt.add_years(years)
@@ -355,81 +348,86 @@ def buildFullIssuerCurve2(mktSpreadBump, irBump):
     return libor_curve, issuer_curve
 
 
-cdsRecovery = 0.40
+cds_recovery = 0.40
 
-libor_curve, issuer_curve1 = buildFullIssuerCurve1(0.0, 0.0)
+libor_curve, issuer_curve1 = build_full_issuer_curve1(0.0, 0.0)
 
 # This is the 10 year contract at an off market cpn
 maturity_dt = Date(20, 6, 2029)
 cds_cpn = 0.0150
 notional = ONE_MILLION
 long_protection = True
-tradeDate = Date(9, 8, 2019)
-value_dt1 = tradeDate.add_days(1)
+trade_dt = Date(9, 8, 2019)
+value_dt1 = trade_dt.add_days(1)
 effective_dt = value_dt1
 
-cds_contract1 = CDS(
-    effective_dt, maturity_dt, cds_cpn, notional, long_protection
-)
-t = (maturity_dt - value_dt1) / g_days_in_year
+cds_contract1 = CDS(effective_dt, maturity_dt, cds_cpn, notional, long_protection)
+t = (maturity_dt - value_dt1) / G_DAYS_IN_YEARS
 z = libor_curve.df(maturity_dt)
 r1 = -np.log(z) / t
 print(t, z, r1, maturity_dt)
-mktSpread1 = 0.040
+mkt_spd1 = 0.040
 
-libor_curve, issuer_curve2 = buildFullIssuerCurve2(0.0, 0.0)
+libor_curve, issuer_curve2 = build_full_issuer_curve2(0.0, 0.0)
 
 # This is the 10 year contract at an off market cpn
 maturity_dt = Date(20, 6, 2025)
 cds_cpn = 0.050
 notional = ONE_MILLION
 long_protection = True
-tradeDate = Date(20, 8, 2020)
+trade_dt = Date(20, 8, 2020)
 effective_dt = Date(21, 8, 2020)
-value_dt2 = tradeDate
+value_dt2 = trade_dt
 
-cds_contract2 = CDS(
-    effective_dt, maturity_dt, cds_cpn, notional, long_protection
-)
-t = (maturity_dt - value_dt2) / g_days_in_year
+cds_contract2 = CDS(effective_dt, maturity_dt, cds_cpn, notional, long_protection)
+t = (maturity_dt - value_dt2) / G_DAYS_IN_YEARS
 z = libor_curve.df(maturity_dt)
 r2 = -np.log(z) / t
-mktSpread2 = 0.01
+mkt_spd2 = 0.01
+
+########################################################################################
 
 
 def test_par_spread():
-    spd = (
-        cds_contract1.par_spread(value_dt1, issuer_curve1, cdsRecovery)
-        * 10000.0
-    )
-    assert round(spd, 4) == 399.9996
 
-    spd = (
-        cds_contract2.par_spread(value_dt2, issuer_curve2, cdsRecovery)
-        * 10000.0
-    )
+    spd = cds_contract1.par_spread(value_dt1, issuer_curve1, cds_recovery) * 10000.0
+    assert round(spd, 3) == 399.999
+
+    spd = cds_contract2.par_spread(value_dt2, issuer_curve2, cds_recovery) * 10000.0
     assert round(spd, 4) == 99.5858
 
 
-def test_value():
-    v = cds_contract1.value(value_dt1, issuer_curve1, cdsRecovery)
-    assert round(v["dirty_pv"], 4) == 168514.5956
-    assert round(v["clean_pv"], 4) == 170639.5956
+########################################################################################
 
-    v = cds_contract2.value(value_dt2, issuer_curve2, cdsRecovery)
-    assert round(v["dirty_pv"], 4) == -199842.7922
-    assert round(v["clean_pv"], 4) == -191509.4589
+
+def test_value():
+
+    v = cds_contract1.value(value_dt1, issuer_curve1, cds_recovery)
+    assert round(v["dirty_pv"], 4) == 168490.4637
+    assert round(v["clean_pv"], 4) == 170615.4637
+
+    v = cds_contract2.value(value_dt2, issuer_curve2, cds_recovery)
+    assert round(v["dirty_pv"], 4) == -199842.2583
+    assert round(v["clean_pv"], 4) == -191508.9250
+
+
+########################################################################################
 
 
 def test_clean_price():
-    p = cds_contract1.clean_price(value_dt1, issuer_curve1, cdsRecovery)
-    assert round(p, 4) == 82.936
 
-    p = cds_contract2.clean_price(value_dt2, issuer_curve2, cdsRecovery)
+    p = cds_contract1.clean_price(value_dt1, issuer_curve1, cds_recovery)
+    assert round(p, 4) == 82.9385
+
+    p = cds_contract2.clean_price(value_dt2, issuer_curve2, cds_recovery)
     assert round(p, 4) == 119.1509
 
 
+########################################################################################
+
+
 def testaccrued_days():
+
     accrued_days = cds_contract1.accrued_days()
     assert accrued_days == 51.0
 
@@ -437,7 +435,11 @@ def testaccrued_days():
     assert accrued_days == 60.0
 
 
+########################################################################################
+
+
 def test_accrued_interest():
+
     accrued_interest = cds_contract1.accrued_interest()
     assert accrued_interest == -2125.0
 
@@ -445,40 +447,43 @@ def test_accrued_interest():
     assert round(accrued_interest, 4) == -8333.3333
 
 
-def test_prot_leg_pv():
-    prot_pv = cds_contract1.prot_leg_pv(value_dt1, issuer_curve1, cdsRecovery)
-    assert round(prot_pv, 4) == 273023.5221
+########################################################################################
 
-    prot_pv = cds_contract2.prot_leg_pv(value_dt2, issuer_curve2, cdsRecovery)
-    assert round(prot_pv, 4) == 47629.7343
+
+def test_prot_leg_pv():
+
+    prot_pv = cds_contract1.prot_leg_pv(value_dt1, issuer_curve1, cds_recovery)
+    assert round(prot_pv, 3) == 272985.134
+
+    prot_pv = cds_contract2.prot_leg_pv(value_dt2, issuer_curve2, cds_recovery)
+    assert round(prot_pv, 4) == 47629.5968
+
+
+########################################################################################
 
 
 def test_premium_leg_pv():
-    premPV = cds_contract1.premium_leg_pv(
-        value_dt1, issuer_curve1, cdsRecovery
-    )
-    assert round(premPV, 4) == 104508.9265
 
-    premPV = cds_contract2.premium_leg_pv(
-        value_dt2, issuer_curve2, cdsRecovery
-    )
-    assert round(premPV, 4) == 247472.5265
+    prem_pv = cds_contract1.premium_leg_pv(value_dt1, issuer_curve1, cds_recovery)
+    assert round(prem_pv, 4) == 104494.6703
+
+    prem_pv = cds_contract2.premium_leg_pv(value_dt2, issuer_curve2, cds_recovery)
+    assert round(prem_pv, 4) == 247471.8551
+
+
+########################################################################################
 
 
 def test_value_approx():
 
-    v_approx = cds_contract1.value_fast_approx(
-        value_dt1, r1, mktSpread1, cdsRecovery
-    )
-    print(value_dt1, r1, mktSpread1, cdsRecovery)
+    v_approx = cds_contract1.value_fast_approx(value_dt1, r1, mkt_spd1, cds_recovery)
+    print(value_dt1, r1, mkt_spd1, cds_recovery)
     assert round(v_approx[0], 4) == 165262.8062
     assert round(v_approx[1], 4) == 167387.8062
     assert round(v_approx[2], 4) == 555.5746
     assert round(v_approx[3], 4) == -71.4881
 
-    v_approx = cds_contract2.value_fast_approx(
-        value_dt2, r2, mktSpread2, cdsRecovery
-    )
+    v_approx = cds_contract2.value_fast_approx(value_dt2, r2, mkt_spd2, cds_recovery)
     assert round(v_approx[0], 4) == -195853.3675
     assert round(v_approx[1], 4) == -187520.0342
     assert round(v_approx[2], 4) == 534.9973

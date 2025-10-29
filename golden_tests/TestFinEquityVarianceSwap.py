@@ -1,34 +1,31 @@
-###############################################################################
 # Copyright (C) 2018, 2019, 2020 Dominic O'Kane
-###############################################################################
-
-import sys
-
-sys.path.append("..")
 
 import numpy as np
+
+import add_fp_to_path
 
 from financepy.utils.date import Date
 from financepy.market.volatility.equity_vol_curve import EquityVolCurve
 from financepy.products.equity.equity_variance_swap import EquityVarianceSwap
 from financepy.market.curves.discount_curve_flat import DiscountCurveFlat
 
-from FinTestCases import FinTestCases, globalTestCaseMode
+from FinTestCases import FinTestCases, global_test_case_mode
 
-test_cases = FinTestCases(__file__, globalTestCaseMode)
+test_cases = FinTestCases(__file__, global_test_case_mode)
 
-###############################################################################
+########################################################################################
 
 
-def volSkew(K, atm_vol, atmK, skew):
-    v = atm_vol + skew * (K - atmK)
+def vol_skew(k, atm_vol, atm_k, skew):
+
+    v = atm_vol + skew * (k - atm_k)
     return v
 
 
-###############################################################################
+########################################################################################
 
 
-def test_EquityVarianceSwap():
+def test_equity_variance_swap():
 
     start_dt = Date(20, 3, 2018)
     tenor = "3M"
@@ -44,10 +41,10 @@ def test_EquityVarianceSwap():
     maturity_dt = start_dt.add_months(3)
 
     atm_vol = 0.20
-    atmK = 100.0
-    skew = -0.02 / 5.0  # defined as dsigma/dK
+    atm_k = 100.0
+    skew = -0.02 / 5.0  # defined as dsigma/dk
     strikes = np.linspace(50.0, 135.0, 18)
-    vols = volSkew(strikes, atm_vol, atmK, skew)
+    vols = vol_skew(strikes, atm_vol, atm_k, skew)
     vol_curve = EquityVolCurve(value_dt, maturity_dt, strikes, vols)
 
     strike_spacing = 5.0
@@ -79,8 +76,7 @@ def test_EquityVarianceSwap():
     test_cases.print("DERMAN SKEW APPROX for K:", k2)
 
 
-##########################################################################
+########################################################################################
 
-
-test_EquityVarianceSwap()
-test_cases.compareTestCases()
+test_equity_variance_swap()
+test_cases.compare_test_cases()

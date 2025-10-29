@@ -1,17 +1,15 @@
-##############################################################################
 # Copyright (C) 2018, 2019, 2020 Dominic O'Kane
-##############################################################################
 
-import sys
-sys.path.append("..")
+import add_fp_to_path
 
 from financepy.utils.currency import CurrencyTypes
 from financepy.utils.amount import Amount
-from FinTestCases import FinTestCases, globalTestCaseMode
 
-test_cases = FinTestCases(__file__, globalTestCaseMode)
+from FinTestCases import FinTestCases, global_test_case_mode
 
-##########################################################################
+test_cases = FinTestCases(__file__, global_test_case_mode)
+
+########################################################################################
 
 
 def test_amount():
@@ -25,9 +23,9 @@ def test_amount():
 
     test_cases.print("Amount", x)
 
-###############################################################################
 
+########################################################################################
 
 test_amount()
 
-test_cases.compareTestCases()
+test_cases.compare_test_cases()

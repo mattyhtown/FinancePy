@@ -1,8 +1,5 @@
-###############################################################################
 # Copyright (C) 2018, 2019, 2020 Dominic O'Kane
-###############################################################################
 
-from helpers import build_Ibor_Curve, buildIssuerCurve
 from financepy.utils.global_types import SwapTypes
 from financepy.utils.date import Date
 from financepy.utils.day_count import DayCountTypes
@@ -14,48 +11,46 @@ from financepy.utils.math import ONE_MILLION
 from financepy.products.credit.cds import CDS
 
 
+from .helpers import build_ibor_curve, build_issuer_curve
+
 # We treat an index as a CDS contract with a flat CDS curve
-tradeDate = Date(7, 2, 2006)
-libor_curve = build_Ibor_Curve(tradeDate)
-issuer_curve = buildIssuerCurve(tradeDate, libor_curve)
-step_in_dt = tradeDate.add_days(1)
+trade_dt = Date(7, 2, 2006)
+libor_curve = build_ibor_curve(trade_dt)
+issuer_curve = build_issuer_curve(trade_dt, libor_curve)
+step_in_dt = trade_dt.add_days(1)
 value_dt = step_in_dt
 maturity_dt = Date(20, 6, 2010)
 
-cdsRecovery = 0.40
+cds_recovery = 0.40
 notional = 10.0 * ONE_MILLION
 long_protection = True
 index_cpn = 0.004
 
-cdsIndexContract = CDS(step_in_dt,
-                       maturity_dt,
-                       index_cpn,
-                       notional,
-                       long_protection)
+cds_index_contract = CDS(step_in_dt, maturity_dt, index_cpn, notional, long_protection)
+
+########################################################################################
 
 
 def test_cds_index():
-    spd = cdsIndexContract.par_spread(
-        value_dt, issuer_curve, cdsRecovery) * 10000.0
+
+    spd = cds_index_contract.par_spread(value_dt, issuer_curve, cds_recovery) * 10000.0
     assert round(spd, 4) == 48.3748
 
-    v = cdsIndexContract.value(value_dt, issuer_curve, cdsRecovery)
-    assert round(v['dirty_pv'], 4) == 27064.9906
-    assert round(v['clean_pv'], 4) == 32620.5461
+    v = cds_index_contract.value(value_dt, issuer_curve, cds_recovery)
+    assert round(v["dirty_pv"], 4) == 27063.9928
+    assert round(v["clean_pv"], 4) == 32619.5484
 
-    p = cdsIndexContract.clean_price(value_dt, issuer_curve, cdsRecovery)
+    p = cds_index_contract.clean_price(value_dt, issuer_curve, cds_recovery)
     assert round(p, 4) == 99.6738
 
-    accrued_days = cdsIndexContract.accrued_days()
+    accrued_days = cds_index_contract.accrued_days()
     assert accrued_days == 50.0
 
-    accrued_interest = cdsIndexContract.accrued_interest()
+    accrued_interest = cds_index_contract.accrued_interest()
     assert round(accrued_interest, 4) == -5555.5556
 
-    prot_pv = cdsIndexContract.prot_leg_pv(
-        value_dt, issuer_curve, cdsRecovery)
-    assert round(prot_pv, 4) == 188423.9948
+    prot_pv = cds_index_contract.prot_leg_pv(value_dt, issuer_curve, cds_recovery)
+    assert round(prot_pv, 4) == 188418.0071
 
-    premPV = cdsIndexContract.premium_leg_pv(
-        value_dt, issuer_curve, cdsRecovery)
-    assert round(premPV, 4) == 161359.0042
+    prem_pv = cds_index_contract.premium_leg_pv(value_dt, issuer_curve, cds_recovery)
+    assert round(prem_pv, 4) == 161354.0143

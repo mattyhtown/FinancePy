@@ -1,12 +1,9 @@
-###############################################################################
 # Copyright (C) 2018, 2019, 2020 Dominic O'Kane
-###############################################################################
 
 import time
-import sys
-sys.path.append("..")
-
 import numpy as np
+
+import add_fp_to_path
 
 from financepy.utils.global_types import OptionTypes
 from financepy.products.fx.fx_digital_option import FXDigitalOption
@@ -17,14 +14,14 @@ from financepy.utils.calendar import CalendarTypes
 from financepy.products.rates.ibor_single_curve import IborSingleCurve
 from financepy.products.rates.ibor_deposit import IborDeposit
 from financepy.utils.date import Date
-from FinTestCases import FinTestCases, globalTestCaseMode
+from FinTestCases import FinTestCases, global_test_case_mode
 
-test_cases = FinTestCases(__file__, globalTestCaseMode)
+test_cases = FinTestCases(__file__, global_test_case_mode)
 
-##########################################################################
+########################################################################################
 
 
-def test_FinFXDigitalOption():
+def test_fin_fx_digital_option():
 
     # Not exactly T=1.0 but close so don't exact exact agreement
     # (in fact I do not get exact agreement even if I do set T=1.0)
@@ -36,8 +33,8 @@ def test_FinFXDigitalOption():
     # DOM = USD , FOR = EUR
     ccy1 = "EUR"
     ccy2 = "USD"
-    ccy1CCRate = 0.030  # EUR
-    ccy2CCRate = 0.025  # USD
+    ccy1_cc_rate = 0.030  # EUR
+    ccy2_cc_rate = 0.025  # USD
 
     currency_pair = ccy1 + ccy2  # Always ccy1ccy2
     spot_fx_rate = 1.20
@@ -46,28 +43,28 @@ def test_FinFXDigitalOption():
 
     notional = 1.0
 
-    domestic_curve = DiscountCurveFlat(value_dt, ccy2CCRate)
-    foreign_curve = DiscountCurveFlat(value_dt, ccy1CCRate)
+    domestic_curve = DiscountCurveFlat(value_dt, ccy2_cc_rate)
+    foreign_curve = DiscountCurveFlat(value_dt, ccy1_cc_rate)
 
     model = BlackScholes(volatility)
 
-    digital_option = FXDigitalOption(expiry_dt,
-                                     strike_fx_rate,
-                                     currency_pair,
-                                     OptionTypes.DIGITAL_CALL,
-                                     notional,
-                                     "USD")
+    digital_option = FXDigitalOption(
+        expiry_dt,
+        strike_fx_rate,
+        currency_pair,
+        OptionTypes.DIGITAL_CALL,
+        notional,
+        "USD",
+    )
 
     spot_fx_rate = np.linspace(0.01, 2.0, 10)
 
-    value = digital_option.value(value_dt,
-                                 spot_fx_rate,
-                                 domestic_curve,
-                                 foreign_curve,
-                                 model)
-
-###############################################################################
+    value = digital_option.value(
+        value_dt, spot_fx_rate, domestic_curve, foreign_curve, model
+    )
 
 
-test_FinFXDigitalOption()
-test_cases.compareTestCases()
+########################################################################################
+
+test_fin_fx_digital_option()
+test_cases.compare_test_cases()

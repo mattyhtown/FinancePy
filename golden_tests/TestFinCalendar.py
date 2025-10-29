@@ -1,22 +1,20 @@
-###############################################################################
 # Copyright (C) 2018, 2019, 2020 Dominic O'Kane
-###############################################################################
 
-import sys
-sys.path.append("..")
+import add_fp_to_path
 
-from FinTestCases import FinTestCases, globalTestCaseMode
 from financepy.utils.calendar import Calendar, CalendarTypes
-from financepy.utils.date import set_date_format, DateFormatTypes
+from financepy.utils.date_format import set_date_format, DateFormatTypes
 from financepy.utils.date import Date
 
 
-test_cases = FinTestCases(__file__, globalTestCaseMode)
+from FinTestCases import FinTestCases, global_test_case_mode
 
-###############################################################################
+test_cases = FinTestCases(__file__, global_test_case_mode)
+
+########################################################################################
 
 
-def test_Calendar():
+def test_calendar():
 
     set_date_format(DateFormatTypes.US_LONGEST)
     end_dt = Date(31, 12, 2030)
@@ -37,17 +35,17 @@ def test_Calendar():
 
             if next_dt.d == 1 and next_dt.m == 1:
                 test_cases.banner("================================")
-#                print("=========================")
+            #                print("=========================")
 
-            is_holidayDay = cal.is_holiday(next_dt)
-            if is_holidayDay is True:
+            is_holiday_day = cal.is_holiday(next_dt)
+            if is_holiday_day is True:
                 test_cases.print(cal, next_dt)
-#                print(cal, next_dt)
+    #                print(cal, next_dt)
 
     set_date_format(DateFormatTypes.US_LONG)
 
-###############################################################################
 
+########################################################################################
 
-test_Calendar()
-test_cases.compareTestCases()
+test_calendar()
+test_cases.compare_test_cases()

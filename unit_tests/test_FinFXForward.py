@@ -1,6 +1,4 @@
-###############################################################################
 # Copyright (C) 2018, 2019, 2020 Dominic O'Kane
-###############################################################################
 
 from financepy.utils.date import Date
 from financepy.products.rates.ibor_deposit import IborDeposit
@@ -9,8 +7,11 @@ from financepy.utils.calendar import CalendarTypes
 from financepy.utils.day_count import DayCountTypes
 from financepy.products.fx.fx_forward import FXForward
 
+########################################################################################
 
-def test_FinFXForward():
+
+def test_fin_fx_forward():
+
     #  https://stackoverflow.com/questions/48778712
     #  /fx-vanilla-call-price-in-quantlib-doesnt-match-bloomberg
 
@@ -23,8 +24,8 @@ def test_FinFXForward():
     currency_pair = for_name + dom_name  # Always ccy1ccy2
     spot_fx_rate = 1.300  # USD per EUR
     strike_fx_rate = 1.365  # USD per EUR
-    ccy1InterestRate = 0.02  # USD Rates
-    ccy2InterestRate = 0.05  # EUR rates
+    ccy1_interest_rate = 0.02  # USD Rates
+    ccy2_interest_rate = 0.05  # EUR rates
 
     spot_days = 0
     settle_dt = value_dt.add_weekdays(spot_days)
@@ -35,7 +36,7 @@ def test_FinFXForward():
     depos = []
     fras = []
     swaps = []
-    deposit_rate = ccy1InterestRate
+    deposit_rate = ccy1_interest_rate
     depo = IborDeposit(
         settle_dt,
         maturity_dt,
@@ -50,7 +51,7 @@ def test_FinFXForward():
     depos = []
     fras = []
     swaps = []
-    deposit_rate = ccy2InterestRate
+    deposit_rate = ccy2_interest_rate
     depo = IborDeposit(
         settle_dt,
         maturity_dt,
@@ -69,13 +70,9 @@ def test_FinFXForward():
         expiry_dt, strike_fx_rate, currency_pair, notional, notional_currency
     )
 
-    fwd_value = fx_fwd.value(
-        value_dt, spot_fx_rate, domestic_curve, foreign_curve
-    )
+    fwd_value = fx_fwd.value(value_dt, spot_fx_rate, domestic_curve, foreign_curve)
 
-    fwd_fx_rate = fx_fwd.forward(
-        value_dt, spot_fx_rate, domestic_curve, foreign_curve
-    )
+    fwd_fx_rate = fx_fwd.forward(value_dt, spot_fx_rate, domestic_curve, foreign_curve)
 
     assert round(fwd_fx_rate, 4) == 1.3388
 

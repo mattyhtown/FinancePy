@@ -1,21 +1,21 @@
-###############################################################################
 # Copyright (C) 2018, 2019, 2020 Dominic O'Kane
-###############################################################################
 
-import sys
-sys.path.append("..")
 import time
 
 import numpy as np
+
+import add_fp_to_path
+
 from financepy.models.vasicek_mc import zero_price, zero_price_mc
-from FinTestCases import FinTestCases, globalTestCaseMode
 
-test_cases = FinTestCases(__file__, globalTestCaseMode)
+from FinTestCases import FinTestCases, global_test_case_mode
 
-###############################################################################
+test_cases = FinTestCases(__file__, global_test_case_mode)
+
+########################################################################################
 
 
-def test_FinModelRatesVasicek():
+def test_fin_model_rates_vasicek():
 
     r0 = 0.05
     a = 0.10
@@ -33,16 +33,15 @@ def test_FinModelRatesVasicek():
 
     for t in np.linspace(0, 10, 21):
         start = time.time()
-        p_MC = zero_price_mc(r0, a, b, sigma, t, dt, num_paths, seed)
-        p_MC2 = zero_price_mc(r0, a, b, sigma, t, dt, 10 * num_paths, seed)
+        p_mc = zero_price_mc(r0, a, b, sigma, t, dt, num_paths, seed)
+        p_mc2 = zero_price_mc(r0, a, b, sigma, t, dt, 10 * num_paths, seed)
         p = zero_price(r0, a, b, sigma, t)
         end = time.time()
         elapsed = end - start
-        test_cases.print(elapsed, t, p, p_MC, p_MC2)
+        test_cases.print(elapsed, t, p, p_mc, p_mc2)
 
 
-###############################################################################
+########################################################################################
 
-
-test_FinModelRatesVasicek()
-test_cases.compareTestCases()
+test_fin_model_rates_vasicek()
+test_cases.compare_test_cases()

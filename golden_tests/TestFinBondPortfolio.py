@@ -1,36 +1,28 @@
-###############################################################################
 # Copyright (C) 2018, 2019, 2020 Dominic O'Kane
-###############################################################################
 
 import os
 import datetime as dt
+import pandas as pd
 
-import sys
+import add_fp_to_path
 
-sys.path.append("..")
-
-from FinTestCases import FinTestCases, globalTestCaseMode
 from financepy.utils.day_count import DayCountTypes
 from financepy.utils.frequency import FrequencyTypes
 from financepy.products.bonds.bond import Bond
 from financepy.utils.date import Date, from_datetime
 
-test_cases = FinTestCases(__file__, globalTestCaseMode)
+from FinTestCases import FinTestCases, global_test_case_mode
 
-###############################################################################
+test_cases = FinTestCases(__file__, global_test_case_mode)
+
+########################################################################################
 
 
-def test_BondPortfolio():
+def test_bond_portfolio():
 
-    import pandas as pd
-
-    path = os.path.join(
-        os.path.dirname(__file__), "./data/gilt_bond_prices.txt"
-    )
+    path = os.path.join(os.path.dirname(__file__), "./data/gilt_bond_prices.txt")
     bond_dataframe = pd.read_csv(path, sep="\t")
-    bond_dataframe["mid"] = 0.5 * (
-        bond_dataframe["bid"] + bond_dataframe["ask"]
-    )
+    bond_dataframe["mid"] = 0.5 * (bond_dataframe["bid"] + bond_dataframe["ask"])
 
     freq_type = FrequencyTypes.SEMI_ANNUAL
     dc_type = DayCountTypes.ACT_ACT_ICMA
@@ -40,6 +32,7 @@ def test_BondPortfolio():
     test_cases.header("DCTYPE", "MATDATE", "CPN", "PRICE", "ACCD", "YTM")
 
     for dc_type in DayCountTypes:
+
         if dc_type == DayCountTypes.ZERO:
             continue
         for _, bond in bond_dataframe.iterrows():
@@ -66,8 +59,7 @@ def test_BondPortfolio():
             )
 
 
-##########################################################################
+########################################################################################
 
-
-test_BondPortfolio()
-test_cases.compareTestCases()
+test_bond_portfolio()
+test_cases.compare_test_cases()

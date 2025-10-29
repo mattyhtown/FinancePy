@@ -1,12 +1,7 @@
-###############################################################################
 # Copyright (C) 2018, 2019, 2020 Dominic O'Kane
-###############################################################################
 
-import sys
+import add_fp_to_path
 
-sys.path.append("..")
-
-from FinTestCases import FinTestCases, globalTestCaseMode
 from financepy.utils.global_types import SwapTypes
 from financepy.products.rates.ibor_deposit import IborDeposit
 from financepy.products.rates.ibor_swap import IborSwap
@@ -17,14 +12,16 @@ from financepy.products.rates.ibor_single_curve import IborSingleCurve
 from financepy.utils.date import Date
 
 
-test_cases = FinTestCases(__file__, globalTestCaseMode)
+from FinTestCases import FinTestCases, global_test_case_mode
 
-##########################################################################
+test_cases = FinTestCases(__file__, global_test_case_mode)
+
+########################################################################################
 
 
-def build_Ibor_Curve(value_dt):
+def build_ibor_curve(value_dt):
 
-    depoDCCType = DayCountTypes.THIRTY_E_360_ISDA
+    depo_dcc_type = DayCountTypes.THIRTY_E_360_ISDA
     depos = []
 
     pay_fixed = SwapTypes.PAY
@@ -34,19 +31,19 @@ def build_Ibor_Curve(value_dt):
 
     deposit_rate = 0.050
     maturity_dt = settle_dt.add_months(1)
-    depo1 = IborDeposit(settle_dt, maturity_dt, deposit_rate, depoDCCType)
+    depo1 = IborDeposit(settle_dt, maturity_dt, deposit_rate, depo_dcc_type)
 
     maturity_dt = settle_dt.add_months(3)
-    depo2 = IborDeposit(settle_dt, maturity_dt, deposit_rate, depoDCCType)
+    depo2 = IborDeposit(settle_dt, maturity_dt, deposit_rate, depo_dcc_type)
 
     maturity_dt = settle_dt.add_months(6)
-    depo3 = IborDeposit(settle_dt, maturity_dt, deposit_rate, depoDCCType)
+    depo3 = IborDeposit(settle_dt, maturity_dt, deposit_rate, depo_dcc_type)
 
     maturity_dt = settle_dt.add_months(9)
-    depo4 = IborDeposit(settle_dt, maturity_dt, deposit_rate, depoDCCType)
+    depo4 = IborDeposit(settle_dt, maturity_dt, deposit_rate, depo_dcc_type)
 
     maturity_dt = settle_dt.add_months(12)
-    depo5 = IborDeposit(settle_dt, maturity_dt, deposit_rate, depoDCCType)
+    depo5 = IborDeposit(settle_dt, maturity_dt, deposit_rate, depo_dcc_type)
 
     depos.append(depo1)
     depos.append(depo2)
@@ -179,19 +176,17 @@ def build_Ibor_Curve(value_dt):
     return libor_curve
 
 
-##########################################################################
+########################################################################################
 
 
-def test_BondFRN():
+def test_bond_frn():
 
     # https://data.bloomberglp.com/bat/sites/3/2017/07/SF-2017_Paul-Fjeldsted.pdf
     # I have a day out problem on the accrued interest - should be 71 and
     # not 72 days
     # Other than that agreement on the DM is very good.
 
-    ##########################################################################
     # CITIGROUP FRN SCREENSHOT
-    ##########################################################################
 
     test_cases.banner("BLOOMBERG CITIGROUP FRN EXAMPLE")
     issue_dt = Date(10, 11, 2010)
@@ -204,79 +199,75 @@ def test_BondFRN():
 
     test_cases.header("FIELD", "VALUE")
     clean_price = 96.793
-    resetIbor = 0.0143456 - quoted_margin
+    reset_ibor = 0.0143456 - quoted_margin
     current_ibor = 0.0120534
     future_ibors = 0.0130522
 
     settle_dt = Date(21, 7, 2017)
 
     dm = bond.discount_margin(
-        settle_dt, resetIbor, current_ibor, future_ibors, clean_price
+        settle_dt, reset_ibor, current_ibor, future_ibors, clean_price
     )
 
     test_cases.print("Discount Margin (bp) = ", dm * 10000)
 
     dirty_price = bond.dirty_price_from_dm(
-        settle_dt, resetIbor, current_ibor, future_ibors, dm
+        settle_dt, reset_ibor, current_ibor, future_ibors, dm
     )
 
     test_cases.print("Dirty Price = ", dirty_price)
 
-    lastCouponDt = bond.pcd
-    test_cases.print("Last Coupon Date = ", str(lastCouponDt))
+    last_coupon_dt = bond._pcd
+    test_cases.print("Last Coupon Date = ", str(last_coupon_dt))
 
     accddays = bond.accrued_days
     test_cases.print("Accrued Days = ", accddays)
 
-    accdAmount = bond.accrued_int
-    test_cases.print("Accrued Amount = ", accdAmount)
+    accd_amount = bond.accrued_int
+    test_cases.print("Accrued Amount = ", accd_amount)
 
-    principal = bond.principal(
-        settle_dt, resetIbor, current_ibor, future_ibors, dm
-    )
+    principal = bond.principal(settle_dt, reset_ibor, current_ibor, future_ibors, dm)
 
     test_cases.print("Dollar Principal = ", principal)
 
     duration = bond.dollar_duration(
-        settle_dt, resetIbor, current_ibor, future_ibors, dm
+        settle_dt, reset_ibor, current_ibor, future_ibors, dm
     )
 
     test_cases.print("Dollar Rate Duration = ", duration)
 
     modified_duration = bond.modified_duration(
-        settle_dt, resetIbor, current_ibor, future_ibors, dm
+        settle_dt, reset_ibor, current_ibor, future_ibors, dm
     )
 
     test_cases.print("Modified Rate Duration = ", modified_duration)
 
     macauley_duration = bond.macauley_duration(
-        settle_dt, resetIbor, current_ibor, future_ibors, dm
+        settle_dt, reset_ibor, current_ibor, future_ibors, dm
     )
 
     test_cases.print("Macauley Duration = ", macauley_duration)
 
     convexity = bond.convexity_from_dm(
-        settle_dt, resetIbor, current_ibor, future_ibors, dm
+        settle_dt, reset_ibor, current_ibor, future_ibors, dm
     )
 
     test_cases.print("Convexity = ", convexity)
 
     duration = bond.dollar_credit_duration(
-        settle_dt, resetIbor, current_ibor, future_ibors, dm
+        settle_dt, reset_ibor, current_ibor, future_ibors, dm
     )
 
     test_cases.print("Dollar Credit Duration = ", duration)
 
     modified_duration = bond.modified_credit_duration(
-        settle_dt, resetIbor, current_ibor, future_ibors, dm
+        settle_dt, reset_ibor, current_ibor, future_ibors, dm
     )
 
     test_cases.print("Modified Credit Duration = ", modified_duration)
 
-    ##########################################################################
     # EXAMPLE
     # https://ebrary.net/14293/economics/actual_floater
-    ##########################################################################
 
     test_cases.banner("BLOOMBERG CITIGROUP FRN EXAMPLE II")
     issue_dt = Date(28, 3, 2000)
@@ -290,82 +281,77 @@ def test_BondFRN():
 
     test_cases.header("FIELD", "VALUE")
     clean_price = 93.08
-    resetIbor = 0.00537 - quoted_margin
+    reset_ibor = 0.00537 - quoted_margin
     current_ibor = 0.027558
     future_ibors = 0.03295
 
     dm = bond.discount_margin(
-        settle_dt, resetIbor, current_ibor, future_ibors, clean_price
+        settle_dt, reset_ibor, current_ibor, future_ibors, clean_price
     )
 
     test_cases.print("Discount Margin (bp) = ", dm * 10000)
 
     dirty_price = bond.dirty_price_from_dm(
-        settle_dt, resetIbor, current_ibor, future_ibors, dm
+        settle_dt, reset_ibor, current_ibor, future_ibors, dm
     )
 
     test_cases.print("Dirty Price = ", dirty_price)
 
-    lastCouponDt = bond.pcd
-    test_cases.print("Last Coupon Date = ", str(lastCouponDt))
+    last_coupon_dt = bond._pcd
+    test_cases.print("Last Coupon Date = ", str(last_coupon_dt))
 
     accddays = bond.accrued_days
     test_cases.print("Accrued Days = ", accddays)
 
-    accdAmount = bond.accrued_int
-    test_cases.print("Accrued Amount = ", accdAmount)
+    accd_amount = bond.accrued_int
+    test_cases.print("Accrued Amount = ", accd_amount)
 
-    principal = bond.principal(
-        settle_dt, resetIbor, current_ibor, future_ibors, dm
-    )
+    principal = bond.principal(settle_dt, reset_ibor, current_ibor, future_ibors, dm)
 
     test_cases.print("Dollar Principal = ", principal)
 
     duration = bond.dollar_duration(
-        settle_dt, resetIbor, current_ibor, future_ibors, dm
+        settle_dt, reset_ibor, current_ibor, future_ibors, dm
     )
 
     test_cases.print("Dollar Rate Duration = ", duration)
 
     modified_duration = bond.modified_duration(
-        settle_dt, resetIbor, current_ibor, future_ibors, dm
+        settle_dt, reset_ibor, current_ibor, future_ibors, dm
     )
 
     test_cases.print("Modified Rate Duration = ", modified_duration)
 
     macauley_duration = bond.macauley_duration(
-        settle_dt, resetIbor, current_ibor, future_ibors, dm
+        settle_dt, reset_ibor, current_ibor, future_ibors, dm
     )
 
     test_cases.print("Macauley Duration = ", macauley_duration)
 
     convexity = bond.convexity_from_dm(
-        settle_dt, resetIbor, current_ibor, future_ibors, dm
+        settle_dt, reset_ibor, current_ibor, future_ibors, dm
     )
 
     test_cases.print("Convexity = ", convexity)
 
-    principal = bond.principal(
-        settle_dt, resetIbor, current_ibor, future_ibors, dm
-    )
+    principal = bond.principal(settle_dt, reset_ibor, current_ibor, future_ibors, dm)
 
     test_cases.print("Principal = ", principal)
 
     duration = bond.dollar_credit_duration(
-        settle_dt, resetIbor, current_ibor, future_ibors, dm
+        settle_dt, reset_ibor, current_ibor, future_ibors, dm
     )
 
     test_cases.print("Dollar Credit Duration = ", duration)
 
     modified_duration = bond.modified_credit_duration(
-        settle_dt, resetIbor, current_ibor, future_ibors, dm
+        settle_dt, reset_ibor, current_ibor, future_ibors, dm
     )
 
     test_cases.print("Modified Credit Duration = ", modified_duration)
 
 
-##########################################################################
+########################################################################################
 
-
-test_BondFRN()
-test_cases.compareTestCases()
+test_bond_frn()
+test_cases.compare_test_cases()

@@ -1,14 +1,9 @@
-###############################################################################
 # Copyright (C) 2018, 2019, 2020 Dominic O'Kane
-###############################################################################
-
-import sys
-
-sys.path.append("..")
 
 import numpy as np
 
-from FinTestCases import FinTestCases, globalTestCaseMode
+import add_fp_to_path
+
 from financepy.utils.global_types import SwapTypes
 from financepy.utils.date import Date
 from financepy.utils.day_count import DayCountTypes
@@ -23,12 +18,14 @@ from financepy.products.rates.ibor_swap import IborSwap
 from financepy.products.credit.cds import CDS
 
 
-test_cases = FinTestCases(__file__, globalTestCaseMode)
+from FinTestCases import FinTestCases, global_test_case_mode
 
-###############################################################################
+test_cases = FinTestCases(__file__, global_test_case_mode)
+
+########################################################################################
 
 
-def test_FinCDSCurve():
+def test_fin_cds_curve():
 
     curve_dt = Date(20, 12, 2018)
 
@@ -36,7 +33,7 @@ def test_FinCDSCurve():
     depos = []
     fras = []
 
-    fixedDCC = DayCountTypes.ACT_365F
+    fixed_dcc = DayCountTypes.ACT_365F
     fixed_freq = FrequencyTypes.SEMI_ANNUAL
     fixed_cpn = 0.05
 
@@ -49,7 +46,7 @@ def test_FinCDSCurve():
             SwapTypes.PAY,
             fixed_cpn,
             fixed_freq,
-            fixedDCC,
+            fixed_dcc,
         )
         swaps.append(swap)
 
@@ -73,7 +70,7 @@ def test_FinCDSCurve():
     test_cases.header("T", "Q")
     n = len(issuer_curve._times)
     for i in range(0, n):
-        test_cases.print(issuer_curve._times[i], issuer_curve._values[i])
+        test_cases.print(issuer_curve._times[i], issuer_curve._qs[i])
 
     recovery_rate = 0.40
 
@@ -104,10 +101,10 @@ def test_FinCDSCurve():
         print("===>", dfs)
 
 
-###############################################################################
+########################################################################################
 
 
-def test_CDS_recovery_rate():
+def test_cds_recovery_rate():
 
     value_dt = Date(15, 8, 2022)
     settle_dt = value_dt
@@ -115,33 +112,15 @@ def test_CDS_recovery_rate():
     swap_type = SwapTypes.PAY
     dc_type = DayCountTypes.ACT_360
     fixed_freq = FrequencyTypes.MONTHLY
-    swap1 = IborSwap(
-        settle_dt, "2Y", swap_type, 0.03512100, fixed_freq, dc_type
-    )
-    swap2 = IborSwap(
-        settle_dt, "3Y", swap_type, 0.03259300, fixed_freq, dc_type
-    )
-    swap3 = IborSwap(
-        settle_dt, "4Y", swap_type, 0.03069300, fixed_freq, dc_type
-    )
-    swap4 = IborSwap(
-        settle_dt, "5Y", swap_type, 0.02952200, fixed_freq, dc_type
-    )
-    swap5 = IborSwap(
-        settle_dt, "6Y", swap_type, 0.02889300, fixed_freq, dc_type
-    )
-    swap6 = IborSwap(
-        settle_dt, "7Y", swap_type, 0.02850200, fixed_freq, dc_type
-    )
-    swap7 = IborSwap(
-        settle_dt, "8Y", swap_type, 0.02827400, fixed_freq, dc_type
-    )
-    swap8 = IborSwap(
-        settle_dt, "9Y", swap_type, 0.02818500, fixed_freq, dc_type
-    )
-    swap9 = IborSwap(
-        settle_dt, "10Y", swap_type, 0.02823000, fixed_freq, dc_type
-    )
+    swap1 = IborSwap(settle_dt, "2Y", swap_type, 0.03512100, fixed_freq, dc_type)
+    swap2 = IborSwap(settle_dt, "3Y", swap_type, 0.03259300, fixed_freq, dc_type)
+    swap3 = IborSwap(settle_dt, "4Y", swap_type, 0.03069300, fixed_freq, dc_type)
+    swap4 = IborSwap(settle_dt, "5Y", swap_type, 0.02952200, fixed_freq, dc_type)
+    swap5 = IborSwap(settle_dt, "6Y", swap_type, 0.02889300, fixed_freq, dc_type)
+    swap6 = IborSwap(settle_dt, "7Y", swap_type, 0.02850200, fixed_freq, dc_type)
+    swap7 = IborSwap(settle_dt, "8Y", swap_type, 0.02827400, fixed_freq, dc_type)
+    swap8 = IborSwap(settle_dt, "9Y", swap_type, 0.02818500, fixed_freq, dc_type)
+    swap9 = IborSwap(settle_dt, "10Y", swap_type, 0.02823000, fixed_freq, dc_type)
     swaps = [swap1, swap2, swap3, swap4, swap5, swap6, swap7, swap8, swap9]
 
     libor_curve = IborSingleCurve(value_dt, [], [], swaps)
@@ -152,7 +131,7 @@ def test_CDS_recovery_rate():
     cdss = []
     for i in range(len(spreads)):
         freq_type = FrequencyTypes.MONTHLY
-        day_count_type = DayCountTypes.ACT_360
+        dc_type = DayCountTypes.ACT_360
         cal_type = CalendarTypes.WEEKEND
         bd_type = BusDayAdjustTypes.FOLLOWING
         dg_type = DateGenRuleTypes.FORWARD
@@ -162,7 +141,7 @@ def test_CDS_recovery_rate():
             spreads[i],
             notional=100,
             freq_type=freq_type,
-            dc_type=day_count_type,
+            dc_type=dc_type,
             cal_type=cal_type,
             bd_type=bd_type,
             dg_type=dg_type,
@@ -182,12 +161,12 @@ def test_CDS_recovery_rate():
     issuer_curve = CDSCurve(value_dt, cdss, libor_curve, recovery_rate)
 
 
+########################################################################################
+
 #    print(issuer_curve)
 
 
-###############################################################################
+test_fin_cds_curve()
+test_cds_recovery_rate()
 
-test_FinCDSCurve()
-test_CDS_recovery_rate()
-
-test_cases.compareTestCases()
+test_cases.compare_test_cases()

@@ -1,12 +1,10 @@
-##############################################################################
 # Copyright (C) 2018, 2019, 2020 Dominic O'Kane
-##############################################################################
-
-import sys
-sys.path.append("..")
 
 import matplotlib.pyplot as plt
 import numpy as np
+
+import add_fp_to_path
+
 from financepy.utils.date import Date
 from financepy.market.curves.discount_curve import DiscountCurve
 from financepy.market.curves.discount_curve_flat import DiscountCurveFlat
@@ -16,30 +14,29 @@ from financepy.products.rates.ibor_swaption import SwapTypes
 from financepy.models.black import Black
 from financepy.utils.frequency import FrequencyTypes
 from financepy.utils.day_count import DayCountTypes
-from financepy.utils.global_vars import g_days_in_year
+from financepy.utils.global_vars import G_DAYS_IN_YEARS
 from financepy.market.curves.discount_curve_zeros import DiscountCurveZeros
 from financepy.models.bdt_tree import BDTTree
 from financepy.utils.helpers import print_tree
 from financepy.utils.global_types import FinExerciseTypes
-from FinTestCases import FinTestCases, globalTestCaseMode
 
+from FinTestCases import FinTestCases, global_test_case_mode
 
-test_cases = FinTestCases(__file__, globalTestCaseMode)
+test_cases = FinTestCases(__file__, global_test_case_mode)
 
 PLOT_GRAPHS = False
 
-###############################################################################
+########################################################################################
 
 
-def testBlackModelCheck():
+def test_black_model_check():
 
     # Checking Andersen paper using Black's model
     # Used to check swaption price below - we have Ts = 1 and Te = 4
     # Expect a price around 122 cents which is what I find.
 
     value_dt = Date(1, 1, 2020)
-    libor_curve = DiscountCurveFlat(value_dt, 0.06,
-                                    FrequencyTypes.SEMI_ANNUAL)
+    libor_curve = DiscountCurveFlat(value_dt, 0.06, FrequencyTypes.SEMI_ANNUAL)
 
     settle_dt = Date(1, 1, 2020)
     exercise_dt = Date(1, 1, 2021)
@@ -51,25 +48,29 @@ def testBlackModelCheck():
     notional = 100.0
 
     # Pricing a PAY
-    swaptionType = SwapTypes.PAY
-    swaption = IborSwaption(settle_dt,
-                            exercise_dt,
-                            maturity_dt,
-                            swaptionType,
-                            fixed_cpn,
-                            fixed_freq_type,
-                            fixed_dc_type,
-                            notional)
+    swaption_type = SwapTypes.PAY
+    swaption = IborSwaption(
+        settle_dt,
+        exercise_dt,
+        maturity_dt,
+        swaption_type,
+        fixed_cpn,
+        fixed_freq_type,
+        fixed_dc_type,
+        notional,
+    )
 
     model = Black(0.20)
     v = swaption.value(value_dt, libor_curve, model)
     test_cases.header("LABEL", "VALUE")
-    test_cases.print("BLACK'S MODEL PRICE:", v*100)
-
-###############################################################################
+    test_cases.print("BLACK'S MODEL PRICE:", v * 100)
 
 
-def test_BDTExampleOne():
+########################################################################################
+
+
+def test_bdt_example_one():
+
     # HULL BOOK NOTES
     # http://www-2.rotman.utoronto.ca/~hull/technicalnotes/TechnicalNote23.pdf
 
@@ -84,12 +85,9 @@ def test_BDTExampleOne():
     test_cases.header("RATES")
     test_cases.print(zero_rates)
 
-    curve = DiscountCurveZeros(value_dt,
-                               zero_dts,
-                               zero_rates,
-                               FrequencyTypes.ANNUAL)
+    curve = DiscountCurveZeros(value_dt, zero_dts, zero_rates, FrequencyTypes.ANNUAL)
 
-    yieldVol = 0.16
+    yield_vol = 0.16
 
     num_time_steps = 5
     t_mat = years[-1]
@@ -101,13 +99,15 @@ def test_BDTExampleOne():
     years = np.array(years)
     dfs = np.array(dfs)
 
-    model = BDTTree(yieldVol, num_time_steps)
+    model = BDTTree(yield_vol, num_time_steps)
     model.build_tree(t_mat, years, dfs)
 
-###############################################################################
+
+########################################################################################
 
 
-def test_BDTExampleTwo():
+def test_bdt_example_two():
+
     # Valuation of a European option on a cpn bearing bond
     # This follows example in Fig 28.11 of John Hull's book (6th Edition)
     # but does not have the exact same dt so there are some differences
@@ -129,16 +129,16 @@ def test_BDTExampleTwo():
     num_flows = len(bond.cpn_dts)
 
     for i in range(1, num_flows):
-        pcd = bond.cpn_dts[i-1]
+        pcd = bond.cpn_dts[i - 1]
         ncd = bond.cpn_dts[i]
         if pcd < settle_dt and ncd > settle_dt:
-            flow_time = (pcd - settle_dt) / g_days_in_year
+            flow_time = (pcd - settle_dt) / G_DAYS_IN_YEARS
             cpn_times.append(flow_time)
             cpn_flows.append(cpn)
 
     for flow_dt in bond.cpn_dts:
         if flow_dt > settle_dt:
-            flow_time = (flow_dt - settle_dt) / g_days_in_year
+            flow_time = (flow_dt - settle_dt) / G_DAYS_IN_YEARS
             cpn_times.append(flow_time)
             cpn_flows.append(cpn)
 
@@ -148,11 +148,11 @@ def test_BDTExampleTwo():
     strike_price = 105.0
     face = 100.0
 
-    t_mat = (maturity_dt - settle_dt) / g_days_in_year
-    t_exp = (expiry_dt - settle_dt) / g_days_in_year
+    t_mat = (maturity_dt - settle_dt) / G_DAYS_IN_YEARS
+    t_exp = (expiry_dt - settle_dt) / G_DAYS_IN_YEARS
     times = np.linspace(0, t_mat, 11)
     dates = settle_dt.add_years(times)
-    dfs = np.exp(-0.05*times)
+    dfs = np.exp(-0.05 * times)
 
     test_cases.header("LABEL", "VALUES")
     test_cases.print("TIMES:", times)
@@ -169,18 +169,19 @@ def test_BDTExampleTwo():
     exercise_type = FinExerciseTypes.AMERICAN
 
     test_cases.header("Values")
-    treeVector = []
+    tree_vector = []
     for num_time_steps in num_steps_list:
         model = BDTTree(sigma, num_time_steps)
         model.build_tree(t_mat, times, dfs)
-        v = model.bond_option(t_exp, strike_price,
-                              face, cpn_times, cpn_flows, exercise_type)
+        v = model.bond_option(
+            t_exp, strike_price, face, cpn_times, cpn_flows, exercise_type
+        )
 
         test_cases.print(v)
-        treeVector.append(v['call'])
+        tree_vector.append(v["call"])
 
     if PLOT_GRAPHS:
-        plt.plot(num_steps_list, treeVector)
+        plt.plot(num_steps_list, tree_vector)
 
     # The value in Hull converges to 0.699 with 100 time steps while I get 0.70
 
@@ -190,23 +191,25 @@ def test_BDTExampleTwo():
         print("Q")
         print_tree(model._Q, 5)
 
-###############################################################################
+
+########################################################################################
 
 
-def test_BDTExampleThree():
+def test_bdt_example_three():
+
     # Valuation of a swaption as in Leif Andersen's paper - see Table 1 on
     # SSRN-id155208.pdf
 
     test_cases.banner("===================== ANDERSEN PAPER ==============")
 
     # This is a sanity check
-    testBlackModelCheck()
+    test_black_model_check()
 
     settle_dt = Date(1, 1, 2020)
     times = np.array([0.0, 1.0, 2.0, 3.0, 4.0, 5.0])
     dates = settle_dt.add_years(times)
     rate = 0.06
-    dfs = 1.0 / (1.0 + rate/2.0)**(2.0*times)
+    dfs = 1.0 / (1.0 + rate / 2.0) ** (2.0 * times)
     curve = DiscountCurve(settle_dt, dates, dfs)
 
     cpn = 0.06
@@ -217,11 +220,21 @@ def test_BDTExampleThree():
     # Andersen paper
     num_time_steps = 200
 
-    test_cases.header("ExerciseType", "Sigma", "NumSteps", "Texp", "Tmat",
-                     "V_Fixed", "V_pay", "V_rec")
+    test_cases.header(
+        "ExerciseType",
+        "Sigma",
+        "NumSteps",
+        "Texp",
+        "Tmat",
+        "V_Fixed",
+        "V_pay",
+        "V_rec",
+    )
 
-    for exercise_type in [FinExerciseTypes.EUROPEAN,
-                          FinExerciseTypes.BERMUDAN]:
+    for exercise_type in [
+        FinExerciseTypes.EUROPEAN,
+        FinExerciseTypes.BERMUDAN,
+    ]:
 
         for years_to_maturity in [4.0, 5.0, 10.0, 20.0]:
 
@@ -235,57 +248,63 @@ def test_BDTExampleThree():
             elif years_to_maturity == 20.0:
                 sigma = 0.1035
 
-            for expiryYears in range(int(years_to_maturity/2)-1, int(years_to_maturity)):
+            for expiry_years in range(
+                int(years_to_maturity / 2) - 1, int(years_to_maturity)
+            ):
 
-                expiry_dt = settle_dt.add_years(expiryYears)
+                expiry_dt = settle_dt.add_years(expiry_years)
 
-                t_mat = (maturity_dt - settle_dt) / g_days_in_year
-                t_exp = (expiry_dt - settle_dt) / g_days_in_year
+                t_mat = (maturity_dt - settle_dt) / G_DAYS_IN_YEARS
+                t_exp = (expiry_dt - settle_dt) / G_DAYS_IN_YEARS
 
-                bond = Bond(issue_dt, maturity_dt,
-                            cpn, freq_type, dc_type)
+                bond = Bond(issue_dt, maturity_dt, cpn, freq_type, dc_type)
 
                 cpn_times = []
                 cpn_flows = []
                 cpn = bond.cpn / bond.freq
                 for flow_dt in bond.cpn_dts:
                     if flow_dt > expiry_dt:
-                        flow_time = (flow_dt - settle_dt) / g_days_in_year
+                        flow_time = (flow_dt - settle_dt) / G_DAYS_IN_YEARS
                         cpn_times.append(flow_time)
                         cpn_flows.append(cpn)
 
                 cpn_times = np.array(cpn_times)
                 cpn_flows = np.array(cpn_flows)
 
-                price = bond.clean_price_from_discount_curve(
-                    settle_dt, curve)
+                price = bond.clean_price_from_discount_curve(settle_dt, curve)
 
                 model = BDTTree(sigma, num_time_steps)
                 model.build_tree(t_mat, times, dfs)
 
-                v = model.bermudan_swaption(t_exp,
-                                            t_mat,
-                                            strike_price,
-                                            face,
-                                            cpn_times,
-                                            cpn_flows,
-                                            exercise_type)
+                v = model.bermudan_swaption(
+                    t_exp,
+                    t_mat,
+                    strike_price,
+                    face,
+                    cpn_times,
+                    cpn_flows,
+                    exercise_type,
+                )
 
-                test_cases.print("%s" % exercise_type,
-                                "%9.5f" % sigma,
-                                "%9.5f" % num_time_steps,
-                                "%9.5f" % expiryYears,
-                                "%9.5f" % years_to_maturity,
-                                "%9.5f" % price,
-                                "%9.2f" % (v['pay']*100.0),
-                                "%9.2f" % (v['rec']*100.0))
+                test_cases.print(
+                    "%s" % exercise_type,
+                    "%9.5f" % sigma,
+                    "%9.5f" % num_time_steps,
+                    "%9.5f" % expiry_years,
+                    "%9.5f" % years_to_maturity,
+                    "%9.5f" % price,
+                    "%9.2f" % (v["pay"] * 100.0),
+                    "%9.2f" % (v["rec"] * 100.0),
+                )
 
-###############################################################################
+
+########################################################################################
+
 # This has broken and needs to be repaired!!!!
 
 
-test_BDTExampleOne()
-test_BDTExampleTwo()
-test_BDTExampleThree()
+test_bdt_example_one()
+test_bdt_example_two()
+test_bdt_example_three()
 
-test_cases.compareTestCases()
+test_cases.compare_test_cases()

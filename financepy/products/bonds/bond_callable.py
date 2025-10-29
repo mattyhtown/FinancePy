@@ -7,7 +7,7 @@ from enum import Enum
 from typing import List
 import numpy as np
 
-from ...utils.global_vars import g_days_in_year
+from ...utils.global_vars import G_DAYS_IN_YEARS
 from ...models.hw_tree import HWTree
 from ...models.bk_tree import BKTree
 from ...utils.error import FinError
@@ -20,9 +20,9 @@ from ...utils.helpers import label_to_string, check_argument_types
 from ...market.curves.discount_curve import DiscountCurve
 
 
-###############################################################################
+########################################################################################
 # TODO: Make it possible to specify start and end of American Callable/Puttable
-###############################################################################
+########################################################################################
 
 
 class BondModelTypes(Enum):
@@ -32,7 +32,7 @@ class BondModelTypes(Enum):
     BLACK_KARASINSKI = 4
 
 
-###############################################################################
+########################################################################################
 
 
 class BondOptionTypes(Enum):
@@ -42,7 +42,7 @@ class BondOptionTypes(Enum):
     AMERICAN_PUT = 4
 
 
-###############################################################################
+########################################################################################
 
 
 class BondEmbeddedOption:
@@ -56,9 +56,9 @@ class BondEmbeddedOption:
         freq_type: FrequencyTypes,
         dc_type: DayCountTypes,
         call_dts: List[Date],
-        call_prices: List[float],
+        call_prices: np.ndarray,
         put_dts: List[Date],
-        put_prices: List[float],
+        put_prices: np.ndarray,
     ):
         """Create a BondEmbeddedOption object with a maturity date, coupon
         and all the bond inputs."""
@@ -122,8 +122,9 @@ class BondEmbeddedOption:
         self.put_prices = put_prices
         self.par = 100.0
         self.bond._calculate_cpn_dts()
+        self.bond._calculate_payment_dts()
 
-    ###############################################################################
+    ####################################################################################
 
     def value(self, settle_dt: Date, discount_curve: DiscountCurve, model):
         """Value the bond that settles on the specified date that can have
@@ -136,9 +137,9 @@ class BondEmbeddedOption:
         cpn_times = []
         cpn_amounts = []
 
-        for flow_dt in self.bond.cpn_dts[1:]:
+        for flow_dt in self.bond.payment_dts[1:]:
             if flow_dt > settle_dt:
-                cpn_time = (flow_dt - settle_dt) / g_days_in_year
+                cpn_time = (flow_dt - settle_dt) / G_DAYS_IN_YEARS
                 cpn_times.append(cpn_time)
                 cpn_amounts.append(cpn)
 
@@ -149,7 +150,7 @@ class BondEmbeddedOption:
         call_times = []
         for dt in self.call_dts:
             if dt > settle_dt:
-                call_time = (dt - settle_dt) / g_days_in_year
+                call_time = (dt - settle_dt) / G_DAYS_IN_YEARS
                 call_times.append(call_time)
         call_times = np.array(call_times)
         call_prices = np.array(self.call_prices)
@@ -158,13 +159,13 @@ class BondEmbeddedOption:
         put_times = []
         for dt in self.put_dts:
             if dt > settle_dt:
-                put_time = (dt - settle_dt) / g_days_in_year
+                put_time = (dt - settle_dt) / G_DAYS_IN_YEARS
                 put_times.append(put_time)
         put_times = np.array(put_times)
         put_prices = np.array(self.put_prices)
 
         maturity_dt = self.bond.maturity_dt
-        t_mat = (maturity_dt - settle_dt) / g_days_in_year
+        t_mat = (maturity_dt - settle_dt) / G_DAYS_IN_YEARS
         df_times = discount_curve._times
         df_values = discount_curve._dfs
 
@@ -172,9 +173,9 @@ class BondEmbeddedOption:
 
         if isinstance(model, HWTree):
 
-            """We need to build the tree out to the bond maturity date. To be
-            more precise we only need to go out the the last option date but
-            we can do that refinement at a later date."""
+            # We need to build the tree out to the bond maturity date. To be
+            # more precise we only need to go out the the last option date but
+            # we can do that refinement at a later date.
 
             model.build_tree(t_mat, df_times, df_values)
             v1 = model.callable_puttable_bond_tree(
@@ -199,9 +200,7 @@ class BondEmbeddedOption:
             )
             model.num_time_steps -= 1
 
-            v_bond_with_option = (
-                v1["bondwithoption"] + v2["bondwithoption"]
-            ) / 2
+            v_bond_with_option = (v1["bondwithoption"] + v2["bondwithoption"]) / 2
             v_bond_pure = (v1["bondpure"] + v2["bondpure"]) / 2
 
             return {
@@ -211,10 +210,11 @@ class BondEmbeddedOption:
 
         elif isinstance(model, BKTree):
 
-            """Because we not have a closed form bond price we need to build
-            the tree out to the bond maturity which is after option expiry."""
+            # Because we not have a closed form bond price we need to build
+            # the tree out to the bond maturity which is after option expiry.
 
             model.build_tree(t_mat, df_times, df_values)
+
             v1 = model.callable_puttable_bond_tree(
                 cpn_times,
                 cpn_amounts,
@@ -224,8 +224,11 @@ class BondEmbeddedOption:
                 put_prices,
                 face_amount,
             )
+
             model.num_time_steps += 1
+
             model.build_tree(t_mat, df_times, df_values)
+
             v2 = model.callable_puttable_bond_tree(
                 cpn_times,
                 cpn_amounts,
@@ -237,9 +240,7 @@ class BondEmbeddedOption:
             )
             model.num_time_steps -= 1
 
-            v_bond_with_option = (
-                v1["bondwithoption"] + v2["bondwithoption"]
-            ) / 2
+            v_bond_with_option = (v1["bondwithoption"] + v2["bondwithoption"]) / 2
             v_bond_pure = (v1["bondpure"] + v2["bondpure"]) / 2
 
             return {
@@ -249,7 +250,7 @@ class BondEmbeddedOption:
         else:
             raise FinError("Unknown model type")
 
-    ###############################################################################
+    ####################################################################################
 
     def __repr__(self):
 
@@ -271,10 +272,10 @@ class BondEmbeddedOption:
 
         return s
 
-    ###############################################################################
+    ####################################################################################
 
     def _print(self):
         print(self)
 
 
-###############################################################################
+########################################################################################

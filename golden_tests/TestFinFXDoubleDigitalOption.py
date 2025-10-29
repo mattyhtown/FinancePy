@@ -1,26 +1,22 @@
-###############################################################################
 # Copyright (C) 2018, 2019, 2020 Dominic O'Kane
-###############################################################################
-
-import time
-import sys
-sys.path.append("..")
 
 import numpy as np
+
+import add_fp_to_path
 
 from financepy.products.fx.fx_double_digital_option import FXDoubleDigitalOption
 from financepy.models.black_scholes import BlackScholes
 from financepy.market.curves.discount_curve_flat import DiscountCurveFlat
 from financepy.utils.date import Date
-from FinTestCases import FinTestCases, globalTestCaseMode
+from FinTestCases import FinTestCases, global_test_case_mode
 
 
-test_cases = FinTestCases(__file__, globalTestCaseMode)
+test_cases = FinTestCases(__file__, global_test_case_mode)
 
-##########################################################################
+########################################################################################
 
 
-def test_FinFXDoubleDigitalOption():
+def test_fin_fx_double_digital_option():
 
     value_dt = Date(10, 4, 2020)
     expiry_dt = Date(18, 9, 2020)
@@ -57,14 +53,11 @@ def test_FinFXDoubleDigitalOption():
     spot_fx_rate = np.linspace(0.01, 2.0, 10)
 
     value = double_digital_option.value(
-        value_dt,
-        spot_fx_rate,
-        domestic_curve,
-        foreign_curve,
-        model)
-
-###############################################################################
+        value_dt, spot_fx_rate, domestic_curve, foreign_curve, model
+    )
 
 
-test_FinFXDoubleDigitalOption()
-test_cases.compareTestCases()
+########################################################################################
+
+test_fin_fx_double_digital_option()
+test_cases.compare_test_cases()

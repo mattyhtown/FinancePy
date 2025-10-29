@@ -6,11 +6,11 @@
 # TODO: Extend to allow two fixed legs in underlying swap
 # TODO: Cash settled swaptions
 
-""" This module implements the LMM in the spot measure. It combines both model
+"""This module implements the LMM in the spot measure. It combines both model
 and product specific code - I am not sure if it is better to separate these. At
 the moment this seems to work ok.
 
-THIS IS STILL IN PROTOPTYPE MODE. DO NOT USE. """
+THIS IS STILL IN PROTOPTYPE MODE. DO NOT USE."""
 
 import numpy as np
 
@@ -31,7 +31,7 @@ from ...models.lmm_mc import lmm_simulate_fwds_nf
 from ...models.lmm_mc import ModelLMMModelTypes
 from ...models.lmm_mc import lmm_cap_flr_pricer
 
-from ...utils.global_vars import g_days_in_year
+from ...utils.global_vars import G_DAYS_IN_YEARS
 from ...utils.math import ONE_MILLION
 
 from ...utils.global_types import SwapTypes
@@ -39,7 +39,7 @@ from ...utils.global_types import FinCapFloorTypes
 
 from financepy.market.volatility.ibor_cap_vol_curve import IborCapVolCurve
 
-###############################################################################
+########################################################################################
 
 
 class IborLMMProducts:
@@ -84,7 +84,7 @@ class IborLMMProducts:
 
         for next_dt in self.grid_dts[1:]:
             tau = basis.year_frac(prev_dt, next_dt)[0]
-            t = (next_dt - self.grid_dts[0]) / g_days_in_year
+            t = (next_dt - self.grid_dts[0]) / G_DAYS_IN_YEARS
             self.accrual_factors.append(tau)
             self.grid_times.append(t)
             prev_dt = next_dt
@@ -402,7 +402,6 @@ class IborLMMProducts:
 
         num_fwds = len(cap_floor_dts)
         num_paths = self.num_paths
-        K = cap_floor_rate
 
         is_cap = 0
         if cap_floor_type == FinCapFloorTypes.CAP:
@@ -413,7 +412,7 @@ class IborLMMProducts:
         taus = self.accrual_factors
 
         v = lmm_cap_flr_pricer(
-            num_fwds, num_paths, K, fwd0, fwds, taus, is_cap
+            num_fwds, num_paths, cap_floor_rate, fwd0, fwds, taus, is_cap
         )
 
         # Sum the cap/floorlets to get cap/floor value
@@ -439,4 +438,4 @@ class IborLMMProducts:
         print(self)
 
 
-###############################################################################
+########################################################################################

@@ -1,6 +1,9 @@
 ##############################################################################
 # Copyright (C) 2018, 2019, 2020 Dominic O'Kane
 ##############################################################################
+
+from typing import Union
+
 import numpy as np
 import pandas as pd
 
@@ -31,7 +34,7 @@ class SwapFixedLeg:
     def __init__(
         self,
         effective_dt: Date,  # Date interest starts to accrue
-        end_dt: (Date, str),  # Date contract ends
+        end_dt: Union[Date, str],  # Date contract ends
         leg_type: SwapTypes,
         coupon: float,
         freq_type: FrequencyTypes,
@@ -50,7 +53,7 @@ class SwapFixedLeg:
 
         check_argument_types(self.__init__, locals())
 
-        if type(end_dt) is Date:
+        if isinstance(end_dt, Date):
             self.termination_dt = end_dt
         else:
             self.termination_dt = effective_dt.add_tenor(end_dt)
@@ -84,6 +87,10 @@ class SwapFixedLeg:
         self.year_fracs = []
         self.accrued_days = []
         self.rates = []
+
+        self.payment_dfs = []
+        self.payment_pvs = []
+        self.cumulative_pvs = []
 
         self.generate_payments()
 
@@ -139,7 +146,7 @@ class SwapFixedLeg:
 
             self.payment_dts.append(payment_dt)
 
-            (year_frac, num, den) = day_counter.year_frac(prev_dt, next_dt)
+            (year_frac, num, _) = day_counter.year_frac(prev_dt, next_dt)
 
             self.rates.append(self.cpn)
 
@@ -342,7 +349,7 @@ class SwapFixedLeg:
         s += label_to_string("DATE GEN TYPE", self.dg_type)
         return s
 
-    ###############################################################################
+    ########################################################################################
 
     def _print(self):
         """Print a list of the unadjusted coupon payment dates used in
@@ -350,4 +357,4 @@ class SwapFixedLeg:
         print(self)
 
 
-###############################################################################
+########################################################################################

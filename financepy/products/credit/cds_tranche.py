@@ -5,6 +5,7 @@
 # TODO: Add __repr__ method
 
 from math import sqrt
+from enum import Enum
 
 import numpy as np
 
@@ -21,7 +22,7 @@ from ...utils.calendar import BusDayAdjustTypes, DateGenRuleTypes
 from ...products.credit.cds import CDS
 from ...products.credit.cds_curve import CDSCurve
 
-from ...utils.global_vars import g_days_in_year
+from ...utils.global_vars import G_DAYS_IN_YEARS
 from ...utils.math import ONE_MILLION
 from ...market.curves.interpolator import InterpTypes, interpolate
 from ...utils.error import FinError
@@ -29,9 +30,7 @@ from ...utils.error import FinError
 from ...utils.helpers import check_argument_types
 from ...utils.date import Date
 
-###############################################################################
-
-from enum import Enum
+########################################################################################
 
 
 class FinLossDistributionBuilder(Enum):
@@ -41,7 +40,7 @@ class FinLossDistributionBuilder(Enum):
     LHP = 4
 
 
-###############################################################################
+########################################################################################
 
 
 class CDSTranche:
@@ -65,7 +64,7 @@ class CDSTranche:
         check_argument_types(self.__init__, locals())
 
         if k1 >= k2:
-            raise FinError("K1 must be less than K2")
+            raise FinError("k_1 must be less than k_2")
 
         self.k1 = k1
         self.k2 = k2
@@ -96,7 +95,7 @@ class CDSTranche:
             self.dg_type,
         )
 
-    ###########################################################################
+    ####################################################################################
 
     def value_bc(
         self,
@@ -113,7 +112,7 @@ class CDSTranche:
         num_credits = len(issuer_curves)
         k1 = self.k1
         k2 = self.k2
-        t_mat = (self.maturity_dt - value_dt) / g_days_in_year
+        t_mat = (self.maturity_dt - value_dt) / G_DAYS_IN_YEARS
 
         if t_mat < 0.0:
             raise FinError("Value date is after maturity date")
@@ -127,7 +126,7 @@ class CDSTranche:
             return output
 
         if k1 > k2:
-            raise FinError("K1 > K2")
+            raise FinError("k_1 > k_2")
 
         kappa = k2 / (k2 - k1)
 
@@ -161,13 +160,13 @@ class CDSTranche:
 
         for i in range(1, num_times):
 
-            t = (payment_dts[i - 1] - value_dt) / g_days_in_year
+            t = (payment_dts[i - 1] - value_dt) / G_DAYS_IN_YEARS
 
             for j in range(0, num_credits):
 
                 issuer_curve = issuer_curves[j]
-                v_times = issuer_curve._times
-                q_row = issuer_curve._values
+                v_times = issuer_curve.times
+                q_row = issuer_curve.qs
                 recovery_rates[j] = issuer_curve.recovery_rate
                 q_vector[j] = interpolate(
                     t, v_times, q_row, InterpTypes.FLAT_FWD_RATES.value
@@ -250,19 +249,13 @@ class CDSTranche:
                 )
 
             else:
-                raise FinError(
-                    "Unknown model type only full and AdjBinomial allowed"
-                )
+                raise FinError("Unknown model type only full and AdjBinomial allowed")
 
             if qt1[i] > qt1[i - 1]:
-                raise FinError(
-                    "Tranche K1 survival probabilities not decreasing."
-                )
+                raise FinError("Tranche k_1 survival probabilities not decreasing.")
 
             if qt2[i] > qt2[i - 1]:
-                raise FinError(
-                    "Tranche K2 survival probabilities not decreasing."
-                )
+                raise FinError("Tranche k_2 survival probabilities not decreasing.")
 
             tranche_surv_curve[i] = kappa * qt2[i] + (1.0 - kappa) * qt1[i]
             tranche_times[i] = t
@@ -270,8 +263,8 @@ class CDSTranche:
         curve_recovery = 0.0  # For tranches only
         libor_curve = issuer_curves[0].libor_curve
         tranche_curve = CDSCurve(value_dt, [], libor_curve, curve_recovery)
-        tranche_curve._times = tranche_times
-        tranche_curve._values = tranche_surv_curve
+        tranche_curve.set_times(tranche_times)
+        tranche_curve.set_qs(tranche_surv_curve)
 
         prot_leg_pv = self.cds_contract.prot_leg_pv(
             value_dt, tranche_curve, curve_recovery
@@ -280,9 +273,7 @@ class CDSTranche:
             "clean_rpv01"
         ]
 
-        mtm = self.notional * (
-            prot_leg_pv - upfront - risky_pv01 * running_cpn
-        )
+        mtm = self.notional * (prot_leg_pv - upfront - risky_pv01 * running_cpn)
 
         if not self.long_protect:
             mtm *= -1.0
@@ -296,4 +287,4 @@ class CDSTranche:
         return tranche_output
 
 
-###############################################################################
+########################################################################################

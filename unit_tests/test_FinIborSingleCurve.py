@@ -1,6 +1,4 @@
-###############################################################################
 # Copyright (C) 2018, 2019, 2020 Dominic O'Kane
-###############################################################################
 import pytest
 
 from financepy.utils.global_types import SwapTypes
@@ -16,8 +14,10 @@ from financepy.utils.day_count import DayCountTypes
 from financepy.utils.date import Date
 from financepy.utils.calendar import Calendar, CalendarTypes
 
+########################################################################################
 
-def test_bloombergPricingExample():
+
+def test_bloomberg_pricing_example():
     """This is an example of a replication of a BBG example from
     https://github.com/vilen22/curve-building/blob/master/Bloomberg%20Curve%20Building%20Replication.xlsx
 
@@ -28,11 +28,11 @@ def test_bloombergPricingExample():
     # We do the O/N rate which settles on trade date
     spot_days = 0
     settle_dt = value_dt.add_weekdays(spot_days)
-    depoDCCType = DayCountTypes.ACT_360
+    depo_dcc_type = DayCountTypes.ACT_360
     depos = []
     deposit_rate = 0.0231381
     maturity_dt = settle_dt.add_months(3)
-    depo = IborDeposit(settle_dt, maturity_dt, deposit_rate, depoDCCType)
+    depo = IborDeposit(settle_dt, maturity_dt, deposit_rate, depo_dcc_type)
     depos.append(depo)
 
     futs = []
@@ -226,14 +226,8 @@ def test_bloombergPricingExample():
     principal = 0.0
 
     # Pay fixed so make fixed leg value negative
-    assert (
-        round(swaps[0].value(value_dt, libor_curve, libor_curve, None), 4)
-        == 0.0
-    )
-    assert (
-        round(-swaps[0].fixed_leg.value(value_dt, libor_curve), 4)
-        == 53707.6667
-    )
+    assert round(swaps[0].value(value_dt, libor_curve, libor_curve, None), 4) == 0.0
+    assert round(-swaps[0].fixed_leg.value(value_dt, libor_curve), 4) == 53707.6667
     assert (
         round(
             swaps[0].float_leg.value(value_dt, libor_curve, libor_curve, None),
@@ -243,19 +237,11 @@ def test_bloombergPricingExample():
     )
 
     # Pay fixed so make fixed leg value negative
-    assert (
-        round(swaps[0].value(settle_dt, libor_curve, libor_curve, None), 4)
-        == 0.0
-    )
-    assert (
-        round(-swaps[0].fixed_leg.value(settle_dt, libor_curve), 4)
-        == 53714.5507
-    )
+    assert round(swaps[0].value(settle_dt, libor_curve, libor_curve, None), 4) == 0.0
+    assert round(-swaps[0].fixed_leg.value(settle_dt, libor_curve), 4) == 53714.5507
     assert (
         round(
-            swaps[0].float_leg.value(
-                settle_dt, libor_curve, libor_curve, None
-            ),
+            swaps[0].float_leg.value(settle_dt, libor_curve, libor_curve, None),
             4,
         )
         == 53714.5507
@@ -263,133 +249,136 @@ def test_bloombergPricingExample():
 
 
 @pytest.mark.parametrize("interp_type", InterpTypes)
-def test_RepriceInputsForAllInterpChoices(interp_type):
+
+########################################################################################
+
+
+def test_reprice_inputs_for_all_interp_choices(interp_type):
+
     valuation_date = Date(6, 10, 2001)
 
     cal = CalendarTypes.UNITED_KINGDOM
 
-    depoDCCType = DayCountTypes.ACT_360
+    depo_dcc_type = DayCountTypes.ACT_360
     depos = []
     spot_days = 2
     settlement_date = valuation_date.add_weekdays(spot_days)
-    depo = IborDeposit(
-        settlement_date, "3M", 4.2 / 100.0, depoDCCType, cal_type=cal
-    )
+    depo = IborDeposit(settlement_date, "3M", 4.2 / 100.0, depo_dcc_type, cal_type=cal)
     depos.append(depo)
 
-    fraDCCType = DayCountTypes.ACT_360
+    fra_dcc_type = DayCountTypes.ACT_360
     fras = []
     fra = IborFRA(
         settlement_date.add_tenor("3M"),
         "3M",
         4.20 / 100.0,
-        fraDCCType,
+        fra_dcc_type,
         cal_type=cal,
     )
     fras.append(fra)
 
     swaps = []
-    swapType = SwapTypes.PAY
-    fixedDCCType = DayCountTypes.THIRTY_E_360_ISDA
-    fixed_freqType = FrequencyTypes.SEMI_ANNUAL
+    swap_type = SwapTypes.PAY
+    fixed_dcc_type = DayCountTypes.THIRTY_E_360_ISDA
+    fixed_freq_type = FrequencyTypes.SEMI_ANNUAL
 
     swap = IborSwap(
         settlement_date,
         "1Y",
-        swapType,
+        swap_type,
         4.20 / 100.0,
-        fixed_freqType,
-        fixedDCCType,
+        fixed_freq_type,
+        fixed_dcc_type,
         cal_type=cal,
     )
     swaps.append(swap)
     swap = IborSwap(
         settlement_date,
         "2Y",
-        swapType,
+        swap_type,
         4.30 / 100.0,
-        fixed_freqType,
-        fixedDCCType,
+        fixed_freq_type,
+        fixed_dcc_type,
         cal_type=cal,
     )
     swaps.append(swap)
     swap = IborSwap(
         settlement_date,
         "3Y",
-        swapType,
+        swap_type,
         4.70 / 100.0,
-        fixed_freqType,
-        fixedDCCType,
+        fixed_freq_type,
+        fixed_dcc_type,
         cal_type=cal,
     )
     swaps.append(swap)
     swap = IborSwap(
         settlement_date,
         "5Y",
-        swapType,
+        swap_type,
         5.40 / 100.0,
-        fixed_freqType,
-        fixedDCCType,
+        fixed_freq_type,
+        fixed_dcc_type,
         cal_type=cal,
     )
     swaps.append(swap)
     swap = IborSwap(
         settlement_date,
         "7Y",
-        swapType,
+        swap_type,
         5.70 / 100.0,
-        fixed_freqType,
-        fixedDCCType,
+        fixed_freq_type,
+        fixed_dcc_type,
         cal_type=cal,
     )
     swaps.append(swap)
     swap = IborSwap(
         settlement_date,
         "10Y",
-        swapType,
+        swap_type,
         6.00 / 100.0,
-        fixed_freqType,
-        fixedDCCType,
+        fixed_freq_type,
+        fixed_dcc_type,
         cal_type=cal,
     )
     swaps.append(swap)
     swap = IborSwap(
         settlement_date,
         "12Y",
-        swapType,
+        swap_type,
         6.10 / 100.0,
-        fixed_freqType,
-        fixedDCCType,
+        fixed_freq_type,
+        fixed_dcc_type,
         cal_type=cal,
     )
     swaps.append(swap)
     swap = IborSwap(
         settlement_date,
         "15Y",
-        swapType,
+        swap_type,
         5.90 / 100.0,
-        fixed_freqType,
-        fixedDCCType,
+        fixed_freq_type,
+        fixed_dcc_type,
         cal_type=cal,
     )
     swaps.append(swap)
     swap = IborSwap(
         settlement_date,
         "20Y",
-        swapType,
+        swap_type,
         5.60 / 100.0,
-        fixed_freqType,
-        fixedDCCType,
+        fixed_freq_type,
+        fixed_dcc_type,
         cal_type=cal,
     )
     swaps.append(swap)
     swap = IborSwap(
         settlement_date,
         "25Y",
-        swapType,
+        swap_type,
         5.55 / 100.0,
-        fixed_freqType,
-        fixedDCCType,
+        fixed_freq_type,
+        fixed_dcc_type,
         cal_type=cal,
     )
     swaps.append(swap)
@@ -405,7 +394,7 @@ def test_RepriceInputsForAllInterpChoices(interp_type):
         fras,
         swaps,
         interp_type,
-        check_refit=True,
+        check_refit_flag=True,
         **optional_interp_params
     )
 

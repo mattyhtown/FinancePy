@@ -2,7 +2,7 @@ import copy
 from typing import Union
 import numpy as np
 
-from ...utils.global_vars import g_basis_point
+from ...utils.global_vars import G_BASIS_POINT
 from ...products.rates.ibor_deposit import IborDeposit
 from ...products.rates.ibor_fra import IborFRA
 from ...products.rates.ibor_swap import IborSwap
@@ -42,20 +42,23 @@ class IborSingleCurveParShocker:
         return len(self._benchmarks_report)
 
     def apply_bump_to_benchmark(
-        self, benchmark_idx: int, bump_size=1.0 * g_basis_point
+        self, benchmark_idx: int, bump_size=1.0 * G_BASIS_POINT
     ):
         """
-        Apply a shock of a given size to a given bechmark. Indexing is per the benchmark report
+        Apply a shock of a given size to a given bechmark.
+        Indexing is per the benchmark report
         """
         composite_shock = np.zeros(self.n_benchmarks())
         composite_shock[benchmark_idx] = bump_size
         return self.apply_composite_bump(composite_shock)
 
     def apply_composite_bump(self, bump_sizes: Union[np.array, list]):
-        """Apply a composite bump to base_curve. A composite bump is a list/array of bumps, one per bechmark
+        """Apply a composite bump to base_curve.
+        A composite bump is a list/array of bumps, one per bechmark
 
         Args:
-            bump_sizes (Union[np.array, list]): a list/array of bump sizes, one per benchmark
+            bump_sizes (Union[np.array, list]): a list/array of bump sizes,
+            one per benchmark
 
         Returns:
             IborSingleCurve: A bumped curve
@@ -81,17 +84,18 @@ class IborSingleCurveParShocker:
                 bumped_swaps.append(bumped_benchmark)
 
         # This assumes that the base curve was built using the default method as defined
-        # in IborSingleCurve._build_curve() based on interp_type. This at the moment excludes
-        # the non-parametric smoothing calibration (for which, incidentally, par bumps are not a giid
-        # idea anyway). But in the future we should keep track of what exactly we used to build
-        # the base curve and use the same method here
+        # in IborSingleCurve.build_curve() based on interp_type. This at the moment
+        # excludes the non-parametric smoothing calibration (for which, incidentally,
+        # par bumps are not a good idea anyway). But in the future we should keep
+        # track of what exactly we used to build the base curve and use the same
+        # method here
         bumped_curve = IborSingleCurve(
             self._base_curve.value_dt,
             bumped_depos,
             bumped_fras,
             bumped_swaps,
             interp_type=self._base_curve._interp_type,
-            check_refit=self._base_curve._check_refit,
+            check_refit_flag=self._base_curve.check_refit_flag,
             do_build=True,
             **self._base_curve._optional_interp_params
         )

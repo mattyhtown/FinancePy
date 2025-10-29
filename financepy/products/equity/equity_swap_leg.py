@@ -2,6 +2,8 @@
 # Copyright (C) 2018, 2019, 2020 Dominic O'Kane
 ##############################################################################
 
+from typing import Union
+
 from ...utils.error import FinError
 from ...utils.date import Date
 from ...utils.day_count import DayCount, DayCountTypes
@@ -30,7 +32,7 @@ class EquitySwapLeg:
     def __init__(
         self,
         effective_dt: Date,  # Contract starts or last equity reset
-        term_dt_or_tenor: (Date, str),  # Date contract ends
+        term_dt_or_tenor: Union[Date, str],  # Date contract ends
         leg_type: SwapTypes,
         freq_type: FrequencyTypes,
         dc_type: DayCountTypes,
@@ -391,4 +393,4 @@ class EquitySwapLeg:
         return s
 
 
-###############################################################################
+########################################################################################

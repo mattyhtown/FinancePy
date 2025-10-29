@@ -1,28 +1,22 @@
-###############################################################################
 # Copyright (C) 2018, 2019, 2020 Dominic O'Kane
-###############################################################################
 
-import sys
+import time
+import numpy as np
 
-sys.path.append("..")
-
-# TODO
-from FinTestCases import FinTestCases, globalTestCaseMode
 from financepy.market.curves.discount_curve_flat import DiscountCurveFlat
 from financepy.utils.day_count import DayCountTypes
 from financepy.utils.frequency import FrequencyTypes
 from financepy.utils.date import Date
 from financepy.products.bonds.bond_convertible import BondConvertible
-import time
-import numpy as np
+
+from FinTestCases import FinTestCases, global_test_case_mode
+
+test_cases = FinTestCases(__file__, global_test_case_mode)
+
+########################################################################################
 
 
-test_cases = FinTestCases(__file__, globalTestCaseMode)
-
-###############################################################################
-
-
-def test_BondConvertible():
+def test_bond_convertible():
 
     settle_dt = Date(31, 12, 2003)
     start_convert_date = Date(31, 12, 2003)
@@ -30,15 +24,15 @@ def test_BondConvertible():
     conversion_ratio = 38.4615  # adjust for face
     coupon = 0.0575
     freq_type = FrequencyTypes.SEMI_ANNUAL
-    accrualBasis = DayCountTypes.ACT_365F
+    accrual_basis = DayCountTypes.ACT_365F
 
     call_price = 1100
     call_dts = [Date(20, 3, 2007), Date(15, 3, 2012), Date(15, 3, 2017)]
     call_prices = np.array([call_price, call_price, call_price])
 
-    putPrice = 90
+    put_price = 90
     put_dts = [Date(20, 3, 2007), Date(15, 3, 2012), Date(15, 3, 2017)]
-    put_prices = np.array([putPrice, putPrice, putPrice])
+    put_prices = np.array([put_price, put_price, put_price])
 
     bond = BondConvertible(
         maturity_dt,
@@ -50,7 +44,7 @@ def test_BondConvertible():
         call_prices,
         put_dts,
         put_prices,
-        accrualBasis,
+        accrual_basis,
     )
     #    print(bond)
 
@@ -77,9 +71,7 @@ def test_BondConvertible():
     stock_price = 28.5
     stock_volatility = 0.370
     rate = 0.04
-    discount_curve = DiscountCurveFlat(
-        settle_dt, rate, FrequencyTypes.CONTINUOUS
-    )
+    discount_curve = DiscountCurveFlat(settle_dt, rate, FrequencyTypes.CONTINUOUS)
     credit_spread = 0.00
     recovery_rate = 0.40
     num_steps_per_year = 20
@@ -133,8 +125,7 @@ def test_BondConvertible():
         test_cases.print(period, num_steps_per_year, res)
 
 
-###############################################################################
+########################################################################################
 
-
-test_BondConvertible()
-test_cases.compareTestCases()
+test_bond_convertible()
+test_cases.compare_test_cases()

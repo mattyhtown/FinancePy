@@ -6,15 +6,15 @@ import numpy as np
 
 
 from ...utils.date import Date
-from ...utils.global_vars import g_days_in_year
+from ...utils.global_vars import G_DAYS_IN_YEARS
 from ...utils.error import FinError
 from ...utils.helpers import label_to_string, check_argument_types
 
-###############################################################################
+########################################################################################
 # ALL CCY RATES MUST BE IN NUM UNITS OF DOMESTIC PER UNIT OF FOREIGN CURRENCY
 # SO EUR USD = 1.30 MEANS 1.30 DOLLARS PER EURO SO DOLLAR IS THE DOMESTIC AND
 # EUR IS THE FOREIGN CURRENCY
-###############################################################################
+########################################################################################
 
 
 class FXForward:
@@ -98,7 +98,7 @@ class FXForward:
             )
 
         if isinstance(value_dt, Date):
-            t = (self.expiry_dt - value_dt) / g_days_in_year
+            t = (self.expiry_dt - value_dt) / G_DAYS_IN_YEARS
         else:
             t = value_dt
 
@@ -158,7 +158,7 @@ class FXForward:
         contract equal to zero."""
 
         if isinstance(value_dt, Date):
-            t = (self.delivery_dt - value_dt) / g_days_in_year
+            t = (self.delivery_dt - value_dt) / G_DAYS_IN_YEARS
         else:
             t = value_dt
 
@@ -195,4 +195,4 @@ class FXForward:
         print(self)
 
 
-###############################################################################
+########################################################################################

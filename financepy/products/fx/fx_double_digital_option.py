@@ -2,12 +2,14 @@
 # Copyright (C) 2018, 2019, 2020 Dominic O'Kane
 ##############################################################################
 
+from typing import Union
+
 import numpy as np
 
 
-from ...utils.math import n_vect  # n_prime_vect
+from ...utils.math import normcdf_vect  # normcdf_prime_vect
 
-from ...utils.global_vars import g_days_in_year
+from ...utils.global_vars import G_DAYS_IN_YEARS
 from ...utils.error import FinError
 
 # from ...products.equity.EquityOption import FinOption
@@ -23,17 +25,21 @@ class FXDoubleDigitalOption:
     def __init__(
         self,
         expiry_dt: Date,
-        upper_strike: (float, np.ndarray),
-        lower_strike: (float, np.ndarray),
+        upper_strike: Union[float, np.ndarray],
+        lower_strike: Union[float, np.ndarray],
         currency_pair: str,  # FORDOM
         notional: float,
         prem_currency: str,
         spot_days: int = 0,
     ):
-        """Create the FX Double Digital Option object. Inputs include
-        expiry date, upper strike, lower strike, currency pair,
-        option type notional and the currency of the notional.
-        An adjustment for spot days is enabled. All currency rates
+        """Create the FX Double Digital Option object. The option pays out
+        the notional in the premium currency if the fx rate is between
+        the upper and lower strike at maturity.
+        The valuation is equivalent to the valuation of the difference of
+        the value of two digital puts, one with the upper and the other
+        with the lower strike. Inputs include expiry date, upper strike,
+        lower strike, currency pair, option type notional and currency of
+        notional. An adjustment for spot days is enabled. All currency rates
         must be entered in the price in domestic currency of one unit
         of foreign. And the currency pair should be in the form FORDOM
         where FOR is the foreign currency pair currency code and DOM is the
@@ -98,19 +104,15 @@ class FXDoubleDigitalOption:
             raise FinError("Valuation date after expiry date.")
 
         if domestic_curve.value_dt != value_dt:
-            raise FinError(
-                "Domestic Curve valuation date not same as valuation date"
-            )
+            raise FinError("Domestic Curve valuation date not same as valuation date")
 
         if foreign_curve.value_dt != value_dt:
-            raise FinError(
-                "Foreign Curve valuation date not same as valuation date"
-            )
+            raise FinError("Foreign Curve valuation date not same as valuation date")
 
         if isinstance(value_dt, Date):
             spot_dt = value_dt.add_weekdays(self.spot_days)
-            t_del = (self.delivery_dt - spot_dt) / g_days_in_year
-            t_exp = (self.expiry_dt - value_dt) / g_days_in_year
+            t_del = (self.delivery_dt - spot_dt) / G_DAYS_IN_YEARS
+            t_exp = (self.expiry_dt - value_dt) / G_DAYS_IN_YEARS
         else:
             t_del = value_dt
             t_exp = t_del
@@ -131,14 +133,18 @@ class FXDoubleDigitalOption:
         r_f = -np.log(for_df) / t_del
 
         s0 = spot_fx_rate
-        K1 = self.lower_strike
-        K2 = self.upper_strike
+        k_1 = self.lower_strike
+        k_2 = self.upper_strike
+
+        lower_digital = None
+        upper_digital = None
+        v = None
 
         if isinstance(model, BlackScholes):
 
             volatility = model.volatility
-            ln_s0_k1 = np.log(s0 / K1)
-            ln_s0_k2 = np.log(s0 / K2)
+            ln_s0_k1 = np.log(s0 / k_1)
+            ln_s0_k2 = np.log(s0 / k_2)
             den = volatility * np.sqrt(t_exp)
             v2 = volatility * volatility
             mu = r_d - r_f
@@ -146,15 +152,15 @@ class FXDoubleDigitalOption:
             upper_d2 = (ln_s0_k2 + (mu - v2 / 2.0) * t_del) / den
 
             if self.prem_currency == self.for_name:
-                lower_digital = s0 * np.exp(-r_f * t_del) * n_vect(-lower_d2)
-                upper_digital = s0 * np.exp(-r_f * t_del) * n_vect(-upper_d2)
+                lower_digital = s0 * np.exp(-r_f * t_del) * normcdf_vect(-lower_d2)
+                upper_digital = s0 * np.exp(-r_f * t_del) * normcdf_vect(-upper_d2)
             elif self.prem_currency == self.dom_name:
-                lower_digital = np.exp(-r_f * t_del) * n_vect(-lower_d2)
-                upper_digital = np.exp(-r_f * t_del) * n_vect(-upper_d2)
+                lower_digital = np.exp(-r_f * t_del) * normcdf_vect(-lower_d2)
+                upper_digital = np.exp(-r_f * t_del) * normcdf_vect(-upper_d2)
 
             v = (upper_digital - lower_digital) * self.notional
 
         return v
 
 
-###############################################################################
+########################################################################################

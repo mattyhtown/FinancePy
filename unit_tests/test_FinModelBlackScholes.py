@@ -1,6 +1,4 @@
-###############################################################################
 # Copyright (C) 2018, 2019, 2020 Dominic O'Kane
-###############################################################################
 
 from pytest import approx
 
@@ -24,65 +22,68 @@ volatility = 0.20
 interest_rate = 0.001
 dividend_yield = 0.0163
 
-option_type = OptionTypes.AMERICAN_CALL
-euOptionType = OptionTypes.EUROPEAN_CALL
+opt_type = OptionTypes.AMERICAN_CALL
+eu_option_type = OptionTypes.EUROPEAN_CALL
 
-amOption = EquityAmericanOption(expiry_dt,
-                                strike_price,
-                                option_type)
+am_option = EquityAmericanOption(expiry_dt, strike_price, opt_type)
 
-ameuOption = EquityAmericanOption(expiry_dt,
-                                  strike_price,
-                                  euOptionType)
+ameu_option = EquityAmericanOption(expiry_dt, strike_price, eu_option_type)
 
-euOption = EquityVanillaOption(expiry_dt,
-                               strike_price,
-                               euOptionType)
+eu_option = EquityVanillaOption(expiry_dt, strike_price, eu_option_type)
 
-discount_curve = DiscountCurveFlat(value_dt, interest_rate,
-                                   FrequencyTypes.CONTINUOUS,
-                                   DayCountTypes.ACT_365F)
+discount_curve = DiscountCurveFlat(
+    value_dt, interest_rate, FrequencyTypes.CONTINUOUS, DayCountTypes.ACT_365F
+)
 
-dividend_curve = DiscountCurveFlat(value_dt, dividend_yield,
-                                   FrequencyTypes.CONTINUOUS,
-                                   DayCountTypes.ACT_365F)
+dividend_curve = DiscountCurveFlat(
+    value_dt, dividend_yield, FrequencyTypes.CONTINUOUS, DayCountTypes.ACT_365F
+)
 
 num_steps_per_year = 400
 
-modelTree = BlackScholes(volatility,
-                         BlackScholesTypes.CRR_TREE,
-                         num_steps_per_year)
+model_tree = BlackScholes(volatility, BlackScholesTypes.CRR_TREE, num_steps_per_year)
+
+########################################################################################
 
 
 def test_black_scholes():
-    v = amOption.value(value_dt, stock_price, discount_curve,
-                       dividend_curve, modelTree)
+
+    v = am_option.value(
+        value_dt, stock_price, discount_curve, dividend_curve, model_tree
+    )
     assert round(v, 4) == 6.8391
 
-    modelApprox = BlackScholes(volatility,
-                               BlackScholesTypes.BARONE_ADESI)
+    model_approx = BlackScholes(volatility, BlackScholesTypes.BARONE_ADESI)
 
-    v = amOption.value(value_dt, stock_price, discount_curve,
-                       dividend_curve, modelApprox)
+    v = am_option.value(
+        value_dt, stock_price, discount_curve, dividend_curve, model_approx
+    )
 
     assert round(v, 4) == 6.8277
 
-    v = ameuOption.value(value_dt, stock_price, discount_curve,
-                         dividend_curve, modelTree)
+    v = ameu_option.value(
+        value_dt, stock_price, discount_curve, dividend_curve, model_tree
+    )
 
     assert round(v, 4) == 6.7510
 
-    v = euOption.value(value_dt, stock_price, discount_curve,
-                       dividend_curve, modelTree)
+    v = eu_option.value(
+        value_dt, stock_price, discount_curve, dividend_curve, model_tree
+    )
 
     assert round(v, 4) == 6.7493
 
 
+########################################################################################
+
+
 def test_bjerksund_stensland():
+
     # Valuation of American call option as in Bjerksund and Sensland's paper published in 1993.
     # See Table 2 in https://www.sciencedirect.com/science/article/abs/pii/095652219390009H
 
     # value_dt and exipry_dt are set so that time to maturity becomes 0.25
+
     value_dt = Date(8, 5, 2015)
     expiry_dt = Date(7, 8, 2015, hh=6)
     interest_rate = 0.08
@@ -92,88 +93,76 @@ def test_bjerksund_stensland():
     stock_prices = [80.0, 90.0, 100.0, 110.0, 120.0]
 
     # model setting
-    discount_curve = DiscountCurveFlat(value_dt,
-                                       interest_rate,
-                                       FrequencyTypes.CONTINUOUS,
-                                       DayCountTypes.ACT_365F)
+    discount_curve = DiscountCurveFlat(
+        value_dt,
+        interest_rate,
+        FrequencyTypes.CONTINUOUS,
+        DayCountTypes.ACT_365F,
+    )
 
-    borrow_curve = DiscountCurveFlat(value_dt,
-                                     borrow_rate,
-                                     FrequencyTypes.CONTINUOUS,
-                                     DayCountTypes.ACT_365F)
+    borrow_curve = DiscountCurveFlat(
+        value_dt,
+        borrow_rate,
+        FrequencyTypes.CONTINUOUS,
+        DayCountTypes.ACT_365F,
+    )
 
-    model = BlackScholes(volatility,
-                         BlackScholesTypes.Bjerksund_Stensland)
+    model = BlackScholes(volatility, BlackScholesTypes.BJERKSUND_STENSLAND)
 
     # american call case
-    amCallOption = EquityAmericanOption(
-        expiry_dt, strike_price, OptionTypes.AMERICAN_CALL)
+    am_call_option = EquityAmericanOption(
+        expiry_dt, strike_price, OptionTypes.AMERICAN_CALL
+    )
     values = []
 
     for stock_price in stock_prices:
 
-        value = amCallOption.value(value_dt,
-                                   stock_price,
-                                   discount_curve,
-                                   borrow_curve,
-                                   model)
+        value = am_call_option.value(
+            value_dt, stock_price, discount_curve, borrow_curve, model
+        )
 
         values.append(round(value, 2))
 
     assert values == [1.29, 3.82, 8.35, 14.80, 22.71]
 
     # american put case
-    amPutOption = EquityAmericanOption(expiry_dt,
-                                       strike_price,
-                                       OptionTypes.AMERICAN_PUT)
+    am_put_option = EquityAmericanOption(
+        expiry_dt, strike_price, OptionTypes.AMERICAN_PUT
+    )
 
     values = []
 
     for stock_price in stock_prices:
 
-        value = amPutOption.value(value_dt,
-                                  stock_price,
-                                  discount_curve,
-                                  borrow_curve,
-                                  model)
+        value = am_put_option.value(
+            value_dt, stock_price, discount_curve, borrow_curve, model
+        )
 
         values.append(round(value, 2))
 
     assert values == [20.53, 12.91, 7.42, 3.93, 1.93]
 
 
+########################################################################################
+
+
 def test_black_scholes_fd():
     """
     Assert finite difference model matches tree model to at least 1 dp
     """
-    params = {
-        'num_samples': 200,
-        'theta': 0.5
-    }
-    model = BlackScholes(volatility,
-                         bs_type=BlackScholesTypes.FINITE_DIFFERENCE,
-                         params=params)
+    params = {"num_samples": 200, "theta": 0.5}
+    model = BlackScholes(
+        volatility, bs_type=BlackScholesTypes.FINITE_DIFFERENCE, params=params
+    )
 
-    v = amOption.value(value_dt,
-                       stock_price,
-                       discount_curve,
-                       dividend_curve,
-                       model)
+    v = am_option.value(value_dt, stock_price, discount_curve, dividend_curve, model)
 
     assert v == approx(6.8391, 1e-1)
 
-    v = ameuOption.value(value_dt,
-                         stock_price,
-                         discount_curve,
-                         dividend_curve,
-                         model)
+    v = ameu_option.value(value_dt, stock_price, discount_curve, dividend_curve, model)
 
     assert v == approx(6.7510, 1e-1)
 
-    v = euOption.value(value_dt,
-                       stock_price,
-                       discount_curve,
-                       dividend_curve,
-                       model)
+    v = eu_option.value(value_dt, stock_price, discount_curve, dividend_curve, model)
 
     assert v == approx(6.7493, 1e-1)

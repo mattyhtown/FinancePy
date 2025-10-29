@@ -2,20 +2,21 @@
 # Copyright (C) 2018, 2019, 2020 Dominic O'Kane
 ##############################################################################
 
+from typing import Union
 
 import numpy as np
 
 from ...utils.error import FinError
 from ...utils.date import Date
 from ...utils.math import ONE_MILLION
-from ...utils.global_vars import g_days_in_year
+from ...utils.global_vars import G_DAYS_IN_YEARS
 from ...utils.global_types import OptionTypes
 from ...models.black_scholes import BlackScholes
 from ...utils.helpers import label_to_string, check_argument_types
 
 from .equity_vanilla_option import EquityVanillaOption
 
-###############################################################################
+########################################################################################
 
 
 class EquityVarianceSwap:
@@ -24,7 +25,7 @@ class EquityVarianceSwap:
     def __init__(
         self,
         start_dt: Date,
-        maturity_dt_or_tenor: (Date, str),
+        maturity_dt_or_tenor: Union[Date, str],
         strike_variance: float,
         notional: float = ONE_MILLION,
         pay_strike_flag: bool = True,
@@ -62,8 +63,8 @@ class EquityVarianceSwap:
         volatility to the valuation date, the forward looking implied
         volatility to the maturity date using the libor discount curve."""
 
-        t1 = (value_dt - self.start_dt) / g_days_in_year
-        t2 = (self.maturity_dt - self.start_dt) / g_days_in_year
+        t1 = (value_dt - self.start_dt) / G_DAYS_IN_YEARS
+        t2 = (self.maturity_dt - self.start_dt) / G_DAYS_IN_YEARS
 
         expected_variance = t1 * realised_var / t2
         expected_variance += (t2 - t1) * fair_strike_var / t2
@@ -76,9 +77,7 @@ class EquityVarianceSwap:
 
     ###########################################################################
 
-    def fair_strike_approx(
-        self, value_dt, fwd_stock_price, strikes, volatilities
-    ):
+    def fair_strike_approx(self, value_dt, fwd_stock_price, strikes, volatilities):
         """This is an approximation of the fair strike variance by Demeterfi
         et al. (1999) which assumes that sigma(K) = sigma(F) - b(K-F)/F where
         F is the forward stock price and sigma(F) is the ATM forward vol."""
@@ -87,14 +86,14 @@ class EquityVarianceSwap:
 
         # TODO Linear interpolation - to be revisited
         atm_vol = np.interp(f, strikes, volatilities)
-        t_mat = (self.maturity_dt - value_dt) / g_days_in_year
+        t_mat = (self.maturity_dt - value_dt) / G_DAYS_IN_YEARS
 
-        """ Calculate the slope of the volatility curve by taking the end
-        points in the volatilities and strikes to calculate the gradient."""
+        # Calculate the slope of the volatility curve by taking the end
+        # points in the volatilities and strikes to calculate the gradient
 
         dvol = volatilities[-1] - volatilities[0]
-        dK = strikes[-1] - strikes[0]
-        b = f * dvol / dK
+        dk = strikes[-1] - strikes[0]
+        b = f * dvol / dk
         var = (atm_vol**2) * np.sqrt(1.0 + 3.0 * t_mat * (b**2))
         return var
 
@@ -123,7 +122,7 @@ class EquityVarianceSwap:
         call_type = OptionTypes.EUROPEAN_CALL
         put_type = OptionTypes.EUROPEAN_PUT
 
-        t_mat = (self.maturity_dt - value_dt) / g_days_in_year
+        t_mat = (self.maturity_dt - value_dt) / G_DAYS_IN_YEARS
 
         df = discount_curve.df_t(t_mat)
         r = -np.log(df) / t_mat
@@ -141,9 +140,9 @@ class EquityVarianceSwap:
         else:
             sstar = stock_price
 
-        """ Replication argument from Demeterfi, Derman, Kamal and Zhou from
-        Goldman Sachs Research notes March 1999. See Appendix A. This aim is
-        to use calls and puts to approximate the payoff of a log contract """
+        # Replication argument from Demeterfi, Derman, Kamal and Zhou from
+        # Goldman Sachs Research notes March 1999. See Appendix A. This aim is
+        # to use calls and puts to approximate the payoff of a log contract
 
         min_strike = sstar - (num_put_options + 1) * strike_spacing
 
@@ -172,9 +171,7 @@ class EquityVarianceSwap:
         self.call_strikes = call_k
 
         option_total = (
-            2.0
-            * (r * t_mat - (s0 * g / sstar - 1.0) - np.log(sstar / s0))
-            / t_mat
+            2.0 * (r * t_mat - (s0 * g / sstar - 1.0) - np.log(sstar / s0)) / t_mat
         )
 
         self.call_wts = np.zeros(num_call_options)
@@ -223,25 +220,25 @@ class EquityVarianceSwap:
 
     ###########################################################################
 
-    def realised_variance(self, closePrices, use_logs=True):
+    def realised_variance(self, close_prices, use_logs=True):
         """Calculate the realised variance according to market standard
         calculations which can either use log or percentage returns."""
 
-        num_observations = len(closePrices)
+        num_observations = len(close_prices)
 
         for i in range(0, num_observations):
-            if closePrices[i] <= 0.0:
+            if close_prices[i] <= 0.0:
                 raise FinError("Stock prices must be greater than zero")
 
         cum_x2 = 0.0
 
         if use_logs is True:
             for i in range(1, num_observations):
-                x = np.log(closePrices[i] / closePrices[i - 1])
+                x = np.log(close_prices[i] / close_prices[i - 1])
                 cum_x2 += x * x
         else:
             for i in range(1, num_observations):
-                x = (closePrices[i] - closePrices[i - 1]) / closePrices[i - 1]
+                x = (close_prices[i] - close_prices[i - 1]) / close_prices[i - 1]
                 cum_x2 += x * x
 
         var = cum_x2 * 252.0 / num_observations
@@ -286,4 +283,4 @@ class EquityVarianceSwap:
         print(self)
 
 
-###############################################################################
+########################################################################################

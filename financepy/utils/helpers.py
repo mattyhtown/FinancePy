@@ -7,43 +7,43 @@ from typing import Union
 
 import numpy as np
 from numba import njit, float64
-from prettytable import PrettyTable
 
 from .date import Date
-from .global_vars import g_days_in_year, g_small
+from .global_vars import G_DAYS_IN_YEARS, G_SMALL
 from .error import FinError
 from .day_count import DayCountTypes, DayCount
 
 
-###############################################################################
+########################################################################################
 
 
 def _func_name():
-    """ Extract calling function name - using a protected method is not that
-    advisable but calling inspect.stack is so slow it must be avoided. """
+    """Extract calling function name - using a protected method is not that
+    advisable but calling inspect.stack is so slow it must be avoided."""
     ff = sys._getframe().f_back.f_code.co_name
     return ff
 
-###############################################################################
+
+########################################################################################
 
 
 def grid_index(t, grid_times):
     n = len(grid_times)
     for i in range(0, n):
         grid_time = grid_times[i]
-        if abs(grid_time - t) < g_small:
+        if abs(grid_time - t) < G_SMALL:
             print(t, grid_times, i)
             return i
 
     raise FinError("Grid index not found")
 
 
-###############################################################################
+########################################################################################
 
 
 def beta_vector_to_corr_matrix(betas):
-    """ Convert a one-factor vector of factor weights to a square correlation
-    matrix. """
+    """Convert a one-factor vector of factor weights to a square correlation
+    matrix."""
 
     num_assets = len(betas)
     correlation = np.ones(shape=(num_assets, num_assets))
@@ -56,15 +56,14 @@ def beta_vector_to_corr_matrix(betas):
     return np.array(correlation)
 
 
-###############################################################################
+########################################################################################
 
 
-def pv01_times(t: float,
-               f: float):
-    """ Calculate a bond style pv01 by calculating remaining coupon times for a
+def pv01_times(t: float, f: float):
+    """Calculate a bond style pv01 by calculating remaining coupon times for a
     bond with t years to maturity and a coupon frequency of f. The order of the
     list is reverse time order - it starts with the last coupon date and ends
-    with the first coupon date. """
+    with the first coupon date."""
 
     dt = 1.0 / f
     ptimes = []
@@ -76,30 +75,30 @@ def pv01_times(t: float,
     return ptimes
 
 
-###############################################################################
+########################################################################################
 
 
-def times_from_dates(dt: (Date, list),
-                     value_dt: Date,
-                     day_count_type: DayCountTypes = None):
-    """ If a single date is passed in then return the year from valuation date
+def times_from_dates(
+    dt: Union[Date, list], value_dt: Date, dc_type: DayCountTypes = None
+):
+    """If a single date is passed in then return the year from valuation date
     but if a whole vector of dates is passed in then convert to a vector of
     times from the valuation date. The output is always a numpy vector of times
-    which has only one element if the input is only one date. """
+    which has only one element if the input is only one date."""
 
     if isinstance(value_dt, Date) is False:
         raise FinError("Valuation date is not a Date")
 
-    if day_count_type is None:
+    if dc_type is None:
         dc_counter = None
     else:
-        dc_counter = DayCount(day_count_type)
+        dc_counter = DayCount(dc_type)
 
     if isinstance(dt, Date):
         num_dts = 1
         times = [None]
         if dc_counter is None:
-            times[0] = (dt - value_dt) / g_days_in_year
+            times[0] = (dt - value_dt) / G_DAYS_IN_YEARS
         else:
             times[0] = dc_counter.year_frac(value_dt, dt)[0]
 
@@ -110,7 +109,7 @@ def times_from_dates(dt: (Date, list),
         times = []
         for i in range(0, num_dts):
             if dc_counter is None:
-                t = (dt[i] - value_dt) / g_days_in_year
+                t = (dt[i] - value_dt) / G_DAYS_IN_YEARS
             else:
                 t = dc_counter.year_frac(value_dt, dt[i])[0]
             times.append(t)
@@ -127,14 +126,13 @@ def times_from_dates(dt: (Date, list),
 
     return None
 
-###############################################################################
+
+########################################################################################
 
 
-def check_vector_differences(x: np.ndarray,
-                             y: np.ndarray,
-                             tol: float = 1e-6):
-    """ Compare two vectors elementwise to see if they are more different than
-    tolerance. """
+def check_vector_differences(x: np.ndarray, y: np.ndarray, tol: float = 1e-6):
+    """Compare two vectors elementwise to see if they are more different than
+    tolerance."""
 
     n1 = len(x)
     n2 = len(y)
@@ -147,35 +145,39 @@ def check_vector_differences(x: np.ndarray,
             print("Vector difference of:", diff, " at index: ", i)
 
 
-###############################################################################
+########################################################################################
 
 
 def check_dt(d: Date):
-    """ Check that input d is a Date. """
+    """Check that input d is a Date."""
 
     if isinstance(d, Date) is False:
         raise FinError("Should be a date dummy!")
 
 
-###############################################################################
+########################################################################################
 
 
 def dump(obj):
-    """ Get a list of all of the attributes of a class (not built in ones) """
+    """Get a list of all of the attributes of a class (not built in ones)"""
 
     attrs = dir(obj)
 
-    non_function_attributes = [attr for attr in attrs
-                               if not callable(getattr(obj, attr))]
+    non_function_attributes = [
+        attr for attr in attrs if not callable(getattr(obj, attr))
+    ]
 
-    non_internal_attributes = [attr for attr in non_function_attributes
-                               if not attr.startswith('__')]
+    non_internal_attributes = [
+        attr for attr in non_function_attributes if not attr.startswith("__")
+    ]
 
-    private_attributes = [attr for attr in non_internal_attributes
-                          if attr.startswith('_')]
+    private_attributes = [
+        attr for attr in non_internal_attributes if attr.startswith("_")
+    ]
 
-    public_attributes = [attr for attr in non_internal_attributes
-                         if not attr.startswith('_')]
+    public_attributes = [
+        attr for attr in non_internal_attributes if not attr.startswith("_")
+    ]
 
     print("PRIVATE ATTRIBUTES")
     for attr in private_attributes:
@@ -188,13 +190,12 @@ def dump(obj):
         print(attr, x)
 
 
-###############################################################################
+########################################################################################
 
 
-def print_tree(array: np.ndarray,
-               depth: int = None):
-    """ Function that prints a binomial or trinonial tree to screen for the
-    purpose of debugging. """
+def print_tree(array: np.ndarray, depth: int = None):
+    """Function that prints a binomial or trinonial tree to screen for the
+    purpose of debugging."""
     n1, n2 = array.shape
 
     if depth is not None:
@@ -203,29 +204,26 @@ def print_tree(array: np.ndarray,
     for j in range(0, n2):
         for i in range(0, n1):
             x = array[i, n2 - j - 1]
-            if x != 0.0:
-                print("%10.5f" % x, end="")
-            else:
-                print("%10s" % '-', end="")
+            print(f"{x:10.5f}" if x != 0.0 else f"{'-':>10}", end="")
         print("")
 
 
-###############################################################################
+########################################################################################
 
 
-def input_time(dt: Date,
-               curve):
-    """ Validates a time input in relation to a curve. If it is a float then
+def input_time(dt: Date, curve):
+    """Validates a time input in relation to a curve. If it is a float then
     it returns a float as long as it is positive. If it is a Date then it
     converts it to a float. If it is a Numpy array then it returns the array
-    as long as it is all positive. """
+    as long as it is all positive."""
 
     small = 1e-8
 
     def check(t):
         if t < 0.0:
-            raise FinError("Date " + str(dt) +
-                           " is before curve date " + str(curve._curve_dt))
+            raise FinError(
+                "Date " + str(dt) + " is before curve date " + str(curve._curve_dt)
+            )
         elif t < small:
             t = small
         return t
@@ -234,7 +232,7 @@ def input_time(dt: Date,
         t = dt
         return check(t)
     elif isinstance(dt, Date):
-        t = (dt - curve.value_dt) / g_days_in_year
+        t = (dt - curve.value_dt) / G_DAYS_IN_YEARS
         return check(t)
     elif isinstance(dt, np.ndarray):
         t = dt
@@ -246,13 +244,12 @@ def input_time(dt: Date,
         raise FinError("Unknown type.")
 
 
-###############################################################################
+########################################################################################
 
 
 @njit(fastmath=True, cache=True)
-def listdiff(a: np.ndarray,
-             b: np.ndarray):
-    """ Calculate a vector of differences between two equal sized vectors. """
+def listdiff(a: np.ndarray, b: np.ndarray):
+    """Calculate a vector of differences between two equal sized vectors."""
 
     if len(a) != len(b):
         raise FinError("Cannot diff lists with different sizes")
@@ -264,13 +261,12 @@ def listdiff(a: np.ndarray,
     return diff
 
 
-###############################################################################
+########################################################################################
 
 
 @njit(fastmath=True, cache=True)
-def dotproduct(x_vector: np.ndarray,
-               y_vector: np.ndarray):
-    """ Fast calculation of dot product using Numba. """
+def dotproduct(x_vector: np.ndarray, y_vector: np.ndarray):
+    """Fast calculation of dot product using Numba."""
 
     dotprod = 0.0
     n = len(x_vector)
@@ -278,14 +274,13 @@ def dotproduct(x_vector: np.ndarray,
         dotprod += x_vector[i] * y_vector[i]
     return dotprod
 
-###############################################################################
+
+########################################################################################
 
 
 @njit(fastmath=True, cache=True)
-def frange(start: int,
-           stop: int,
-           step: int):
-    """ fast range function that takes start value, stop value and step. """
+def frange(start: int, stop: int, step: int):
+    """fast range function that takes start value, stop value and step."""
     x = []
     while start <= stop:
         x.append(start)
@@ -294,12 +289,12 @@ def frange(start: int,
     return x
 
 
-###############################################################################
+########################################################################################
 
 
 @njit(fastmath=True, cache=True)
 def normalise_weights(wt_vector: np.ndarray):
-    """ Normalise a vector of weights so that they sum up to 1.0. """
+    """Normalise a vector of weights so that they sum up to 1.0."""
 
     n = len(wt_vector)
     sum_wts = 0.0
@@ -310,14 +305,16 @@ def normalise_weights(wt_vector: np.ndarray):
     return wt_vector
 
 
-###############################################################################
+########################################################################################
 
 
-def label_to_string(label: str,
-                    value: (float, str),
-                    separator: str = "\n",
-                    list_format: bool = False):
-    """ Format label/value pairs for a unified formatting. """
+def label_to_string(
+    label: str,
+    value: Union[float, str],
+    separator: str = "\n",
+    list_format: bool = False,
+):
+    """Format label/value pairs for a unified formatting."""
     # Format option for lists such that all values are aligned:
     # Label: value1
     #        value2
@@ -337,14 +334,13 @@ def label_to_string(label: str,
 
     return f"{label}: {value}{separator}"
 
-###############################################################################
+
+########################################################################################
 
 
-def table_to_string(header: str,
-                    value_table,
-                    float_precision="10.7f"):
-    """ Format a 2D array into a table-like string. """
-    if (len(value_table) == 0 or type(value_table) is not list):
+def table_to_string(header: str, value_table, float_precision="10.7f"):
+    """Format a 2D array into a table-like string."""
+    if len(value_table) == 0 or isinstance(value_table, list) is False:
         print(len(value_table))
         return ""
 
@@ -362,40 +358,77 @@ def table_to_string(header: str,
 
     return s[:-1]
 
-###############################################################################
+
+########################################################################################
 
 
-def format_table(header: (list, tuple),
-                 rows: (list, tuple)):
-    """ Format a 2D array into a table-like string.
-    Similar to "table_to_string", but using a wrapper
-    around PrettyTable to get a nice formatting. """
+# def format_table(header: (list, tuple), rows: (list, tuple)):
+#     """Format a 2D array into a table-like string.
+#     Similar to "table_to_string", but using a wrapper
+#     around PrettyTable to get a nice formatting."""
 
-    t = PrettyTable(header)
-    num_rows = len(header)
+#     t = PrettyTable(header)
+#     num_rows = len(header)
 
-    if len(rows) == 0:
-        print(len(rows))
+#     if len(rows) == 0:
+#         print(len(rows))
+#         return ""
+
+#     for row in rows:
+#         if len(row) != num_rows:
+#             raise ValueError("Header and Row Size must match!")
+
+#         t.add_row(row)
+
+#     return t
+
+
+def format_table(header, rows):
+    """Format a table without PrettyTable.
+    Left-align text, right-align numbers."""
+
+    if not rows:
         return ""
 
+    num_cols = len(header)
     for row in rows:
-        if len(row) != num_rows:
-            raise ValueError("Header and Row Size must match!")
+        if len(row) != num_cols:
+            raise ValueError("Header and row size must match!")
 
-        t.add_row(row)
+    # Compute max width of each column
+    col_widths = [
+        max(len(str(h)), *(len(str(r[i])) for r in rows)) for i, h in enumerate(header)
+    ]
 
-    return t
+    def format_cell(val, width):
+        if isinstance(val, Union[int, float]):
+            return f"{val:>{width}}"  # Right align
+        return f"{str(val):<{width}}"  # Left align
 
-###############################################################################
+    # Build header
+    header_line = " | ".join(format_cell(h, w) for h, w in zip(header, col_widths))
+    sep_line = "-+-".join("-" * w for w in col_widths)
+
+    # Build rows
+    row_lines = []
+    for row in rows:
+        row_lines.append(
+            " | ".join(format_cell(val, w) for val, w in zip(row, col_widths))
+        )
+
+    return "\n".join([header_line, sep_line] + row_lines)
+
+
+########################################################################################
 
 
 def to_usable_type(t):
-    """ Convert a type such that it can be used with `isinstance` """
-    if hasattr(t, '__origin__'):
+    """Convert a type such that it can be used with `isinstance`"""
+    if hasattr(t, "__origin__"):
         origin = t.__origin__
         # t comes from the `typing` module
         if origin is list:
-            return (list, np.ndarray)
+            return Union[list, np.ndarray]
         elif origin is Union:
             types = t.__args__
             return tuple(to_usable_type(tp) for tp in types)
@@ -409,13 +442,13 @@ def to_usable_type(t):
     return t
 
 
-###############################################################################
+########################################################################################
 
 
 @njit(float64(float64, float64[:], float64[:]), fastmath=True, cache=True)
 def uniform_to_default_time(u, t, v):
-    """ Fast mapping of a uniform random variable to a default time given a
-    survival probability curve. """
+    """Fast mapping of a uniform random variable to a default time given a
+    survival probability curve."""
 
     if u == 0.0:
         return 99999.0
@@ -448,15 +481,14 @@ def uniform_to_default_time(u, t, v):
     return tau
 
 
-###############################################################################
+########################################################################################
 # THIS IS NOT USED
 
+
 @njit(fastmath=True, cache=True)
-def accrued_tree(grid_times: np.ndarray,
-                 grid_flows: np.ndarray,
-                 face: float):
-    """ Fast calulation of accrued interest using an Actual/Actual type of
-    convention. This does not calculate according to other conventions. """
+def accrued_tree(grid_times: np.ndarray, grid_flows: np.ndarray, face: float):
+    """Fast calulation of accrued interest using an Actual/Actual type of
+    convention. This does not calculate according to other conventions."""
 
     numgrid_times = len(grid_times)
 
@@ -475,7 +507,7 @@ def accrued_tree(grid_times: np.ndarray,
         cpn_time = grid_times[i_grid]
         cpn_flow = grid_flows[i_grid]
 
-        if grid_flows[i_grid] > g_small:
+        if grid_flows[i_grid] > G_SMALL:
             cpn_times = np.append(cpn_times, cpn_time)
             cpn_flows = np.append(cpn_flows, cpn_flow)
 
@@ -494,13 +526,17 @@ def accrued_tree(grid_times: np.ndarray,
     return accrued
 
 
-###############################################################################
+########################################################################################
 
 
 def check_argument_types(func, values):
-    """ Check that all values passed into a function are of the same type
+    """Check that all values passed into a function are of the same type
     as the function annotations. If a value has not been annotated, it
-    will not be checked. """
+    will not be checked."""
+
+    value = None
+    usable_type = None
+
     for value_name, annotation_type in func.__annotations__.items():
 
         if value_name in values:
@@ -517,4 +553,5 @@ def check_argument_types(func, values):
             print("It is none of these so FAILS. Please amend.")
             raise FinError("Argument Type Error")
 
-###############################################################################
+
+########################################################################################

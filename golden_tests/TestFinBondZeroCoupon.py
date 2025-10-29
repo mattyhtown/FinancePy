@@ -1,14 +1,10 @@
-###############################################################################
 # Copyright (C) 2018, 2019, 2020 Dominic O'Kane
-###############################################################################
 
-import sys
-
+import os
 import pandas as pd
 
-sys.path.append("..")
+import add_fp_to_path
 
-from FinTestCases import FinTestCases, globalTestCaseMode
 from financepy.products.bonds.bond_zero import BondZero
 from financepy.products.bonds.bond import Bond, YTMCalcType
 
@@ -19,12 +15,13 @@ from financepy.utils.day_count import DayCountTypes
 from financepy.utils.frequency import FrequencyTypes
 from financepy.utils.math import ONE_MILLION
 
-test_cases = FinTestCases(__file__, globalTestCaseMode)
+from FinTestCases import FinTestCases, global_test_case_mode
 
-plotGraphs = False
+test_cases = FinTestCases(__file__, global_test_case_mode)
 
+PLOT_GRAPHS = False
 
-###############################################################################
+########################################################################################
 
 
 def test_bond_zero():
@@ -48,13 +45,19 @@ def test_bond_zero():
     test_cases.print(ytm, accrued_interest)
 
 
-###############################################################################
+########################################################################################
 
 
 def test_bond_zero_ror():
 
-    path = ".//data//test_cases_bond_zero_ror.csv"
-    df = pd.read_csv(path, parse_dates=["buy_date", "sell_date"])
+    # Directory where *this script* is located
+    here = os.path.dirname(os.path.abspath(__file__))
+
+    # Path to your local data file inside a "data" folder
+    data_path = os.path.join(here, "data", "test_cases_bond_zero_ror.csv")
+
+    #    path = ".//data//test_cases_bond_zero_ror.csv"
+    df = pd.read_csv(data_path, parse_dates=["buy_date", "sell_date"])
 
     # A 1-year bond with zero coupon per year. code: 092103011
     bond = BondZero(
@@ -83,7 +86,7 @@ def test_bond_zero_ror():
         buy_price = bond.dirty_price_from_ytm(buy_dt, row.buy_ytm, YTMCalcType.ZERO)
         sell_price = bond.dirty_price_from_ytm(sell_dt, row.sell_ytm, YTMCalcType.ZERO)
 
-        simple, irr, pnl = bond.calc_ror(buy_dt, sell_dt, row.buy_ytm, row.sell_ytm)
+        simple, irr, _ = bond.calc_ror(buy_dt, sell_dt, row.buy_ytm, row.sell_ytm)
 
         test_cases.print(
             row.bond_code,
@@ -98,11 +101,8 @@ def test_bond_zero_ror():
         )
 
 
-###############################################################################
+########################################################################################
 
-try:
-    test_bond_zero()
-    test_bond_zero_ror()
-    test_cases.compareTestCases()
-except Exception as e:
-    print(f"Unexpected error:{e}", sys.exc_info()[0])
+test_bond_zero()
+test_bond_zero_ror()
+test_cases.compare_test_cases()

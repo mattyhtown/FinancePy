@@ -1,71 +1,57 @@
-from datetime import datetime
-from version import __version__
-import setuptools
+from pathlib import Path
+import re
+from setuptools import setup, find_packages
 
-with open("README.md", "r") as fh:
-    long_description = fh.read()
+ROOT = Path(__file__).parent
+long_description = (ROOT / "README.md").read_text(encoding="utf-8")
 
-with open("version.py", "r") as fh:
-    version_number = fh.read()
-    start = version_number.find('"')
-    end = version_number[start + 1 :].find('"')
-    version_number_str = str(version_number[start + 1 : start + end + 1])
-    version_number_str = version_number_str.replace("\n", "")
+# --- Single source of truth: read __version__ from financepy/__init__.py ---
+init_text = (ROOT / "financepy" / "__init__.py").read_text(encoding="utf-8")
+m = re.search(r'^__version__\s*=\s*[\'"]([^\'"]+)[\'"]', init_text, flags=re.M)
+if not m:
+    raise RuntimeError("Unable to find __version__ in financepy/__init__.py")
+version = m.group(1)
 
-print(">>>" + version_number_str + "<<<")
-
-###############################################################################
-cr = "\n"
-
-if 1 == 1:
-    with open("financepy//__init__.template", "r") as file:
-        filedata = file.read()
-
-    # Replace the target string
-    filedata = filedata.replace("__version__", "'" + str(__version__) + "'")
-
-    now = datetime.now()
-    dt_string = now.strftime("%d %b %Y at %H:%M")
-
-    # Replace the target string
-    filedata = filedata.replace("__dateandtime__", dt_string)
-
-    # Write the file out again
-    with open("./financepy//__init__.py", "w") as file:
-        file.write(filedata)
-
-###############################################################################
-
-setuptools.setup(
+setup(
     name="financepy",
-    version=version_number_str,
+    version=version,
     author="Dominic O'Kane",
-    author_email="dominic.okane@edhec.edu",
     description="A Finance Securities Valuation Library",
     long_description=long_description,
     long_description_content_type="text/markdown",
     url="https://github.com/domokane/FinancePy",
+    license="GPL-3.0-or-later",  # SPDX identifier
     keywords=["FINANCE", "OPTIONS", "BONDS", "VALUATION", "DERIVATIVES"],
+    packages=find_packages(exclude=("tests*", "docs*", "notebooks*", "examples*")),
+    include_package_data=True,
+    # Add curated data files (e.g. under financepy/data/)
+    package_data={"financepy": ["data/*.npz"]},
+    python_requires=">=3.8",
     install_requires=[
         "numpy",
-        "numba",
         "scipy",
-        "llvmlite",
-        "ipython",
-        "matplotlib",
+        "numba",  # you can add bounds like "numba>=0.59,<0.61"
+        "llvmlite",  # keep aligned with numba version
         "pandas",
-        "prettytable",
     ],
-    package_data={
-        "": ["*.npz"],
+    extras_require={
+        "viz": ["matplotlib"],
+        "dev": ["pytest", "build", "twine", "ipython"],
     },
-    include_package_date=True,
-    packages=setuptools.find_packages(),
+    entry_points={
+        "console_scripts": [
+            # e.g. "financepy=financepy.__main__:main",
+        ]
+    },
     classifiers=[
-        "Development Status :: 2 - Pre-Alpha",
+        "Development Status :: 4 - Beta",
         "Programming Language :: Python :: 3",
-        "License :: OSI Approved :: GNU General Public License v3 (GPLv3)",
         "Operating System :: OS Independent",
+        # If you keep `license="GPL-3.0-or-later"` above,
+        # you don’t need a Trove license classifier here.
     ],
-    python_requires=">=3.6",
+    project_urls={
+        "Source": "https://github.com/domokane/FinancePy",
+        "Tracker": "https://github.com/domokane/FinancePy/issues",
+    },
 )

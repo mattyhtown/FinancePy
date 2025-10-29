@@ -1,12 +1,9 @@
-###############################################################################
 # Copyright (C) 2018, 2019, 2020 Dominic O'Kane
-###############################################################################
-
-import sys
-
-sys.path.append("..")
 
 import numpy as np
+
+import add_fp_to_path
+
 from financepy.utils.math import ONE_MILLION
 from financepy.products.rates.ibor_single_curve import IborSingleCurve
 from financepy.products.rates.ibor_swap import IborSwap
@@ -21,15 +18,15 @@ from financepy.utils.date import Date
 from financepy.utils.global_types import SwapTypes
 from financepy.market.curves.discount_curve import DiscountCurve
 from financepy.market.curves.interpolator import InterpTypes
-from FinTestCases import FinTestCases, globalTestCaseMode
+from FinTestCases import FinTestCases, global_test_case_mode
 
 
-test_cases = FinTestCases(__file__, globalTestCaseMode)
+test_cases = FinTestCases(__file__, global_test_case_mode)
 
-###############################################################################
+########################################################################################
 
 
-def buildIborSingleCurve(value_dt):
+def build_ibor_single_curve(value_dt):
 
     settle_dt = value_dt.add_days(2)
     dc_type = DayCountTypes.ACT_360
@@ -103,16 +100,10 @@ def buildIborSingleCurve(value_dt):
     fra = IborFRA(start_dt, end_dt, -0.00126, dc_type)
     fras.append(fra)
 
-    ###########################################################################
-    ###########################################################################
-    ###########################################################################
-    ###########################################################################
-
     fixed_freq = FrequencyTypes.ANNUAL
     dc_type = DayCountTypes.THIRTY_E_360
     fixed_leg_type = SwapTypes.PAY
 
-    #######################################
     maturity_dt = settle_dt.add_months(24)
     swap_rate = -0.001506
     swap1 = IborSwap(
@@ -120,7 +111,6 @@ def buildIborSingleCurve(value_dt):
     )
     swaps.append(swap1)
 
-    #######################################
     maturity_dt = settle_dt.add_months(36)
     swap_rate = -0.000185
     swap2 = IborSwap(
@@ -128,7 +118,6 @@ def buildIborSingleCurve(value_dt):
     )
     swaps.append(swap2)
 
-    #######################################
     maturity_dt = settle_dt.add_months(48)
     swap_rate = 0.001358
     swap3 = IborSwap(
@@ -136,7 +125,6 @@ def buildIborSingleCurve(value_dt):
     )
     swaps.append(swap3)
 
-    #######################################
     maturity_dt = settle_dt.add_months(60)
     swap_rate = 0.0027652
     swap4 = IborSwap(
@@ -144,7 +132,6 @@ def buildIborSingleCurve(value_dt):
     )
     swaps.append(swap4)
 
-    #######################################
     maturity_dt = settle_dt.add_months(72)
     swap_rate = 0.0041539
     swap5 = IborSwap(
@@ -152,7 +139,6 @@ def buildIborSingleCurve(value_dt):
     )
     swaps.append(swap5)
 
-    #######################################
     maturity_dt = settle_dt.add_months(84)
     swap_rate = 0.0054604
     swap6 = IborSwap(
@@ -160,7 +146,6 @@ def buildIborSingleCurve(value_dt):
     )
     swaps.append(swap6)
 
-    #######################################
     maturity_dt = settle_dt.add_months(96)
     swap_rate = 0.006674
     swap7 = IborSwap(
@@ -168,7 +153,6 @@ def buildIborSingleCurve(value_dt):
     )
     swaps.append(swap7)
 
-    #######################################
     maturity_dt = settle_dt.add_months(108)
     swap_rate = 0.007826
     swap8 = IborSwap(
@@ -176,7 +160,6 @@ def buildIborSingleCurve(value_dt):
     )
     swaps.append(swap8)
 
-    #######################################
     maturity_dt = settle_dt.add_months(120)
     swap_rate = 0.008821
     swap9 = IborSwap(
@@ -184,7 +167,6 @@ def buildIborSingleCurve(value_dt):
     )
     swaps.append(swap9)
 
-    #######################################
     maturity_dt = settle_dt.add_months(132)
     swap_rate = 0.0097379
     swap10 = IborSwap(
@@ -192,7 +174,6 @@ def buildIborSingleCurve(value_dt):
     )
     swaps.append(swap10)
 
-    #######################################
     maturity_dt = settle_dt.add_months(144)
     swap_rate = 0.0105406
     swap11 = IborSwap(
@@ -200,7 +181,6 @@ def buildIborSingleCurve(value_dt):
     )
     swaps.append(swap11)
 
-    #######################################
     maturity_dt = settle_dt.add_months(180)
     swap_rate = 0.0123927
     swap12 = IborSwap(
@@ -208,7 +188,6 @@ def buildIborSingleCurve(value_dt):
     )
     swaps.append(swap12)
 
-    #######################################
     maturity_dt = settle_dt.add_months(240)
     swap_rate = 0.0139882
     swap13 = IborSwap(
@@ -216,7 +195,6 @@ def buildIborSingleCurve(value_dt):
     )
     swaps.append(swap13)
 
-    #######################################
     maturity_dt = settle_dt.add_months(300)
     swap_rate = 0.0144972
     swap14 = IborSwap(
@@ -224,7 +202,6 @@ def buildIborSingleCurve(value_dt):
     )
     swaps.append(swap14)
 
-    #######################################
     maturity_dt = settle_dt.add_months(360)
     swap_rate = 0.0146081
     swap15 = IborSwap(
@@ -232,7 +209,6 @@ def buildIborSingleCurve(value_dt):
     )
     swaps.append(swap15)
 
-    #######################################
     maturity_dt = settle_dt.add_months(420)
     swap_rate = 0.01461897
     swap16 = IborSwap(
@@ -240,7 +216,6 @@ def buildIborSingleCurve(value_dt):
     )
     swaps.append(swap16)
 
-    #######################################
     maturity_dt = settle_dt.add_months(480)
     swap_rate = 0.014567455
     swap17 = IborSwap(
@@ -248,7 +223,6 @@ def buildIborSingleCurve(value_dt):
     )
     swaps.append(swap17)
 
-    #######################################
     maturity_dt = settle_dt.add_months(540)
     swap_rate = 0.0140826
     swap18 = IborSwap(
@@ -256,15 +230,12 @@ def buildIborSingleCurve(value_dt):
     )
     swaps.append(swap18)
 
-    #######################################
     maturity_dt = settle_dt.add_months(600)
     swap_rate = 0.01436822
     swap19 = IborSwap(
         settle_dt, maturity_dt, fixed_leg_type, swap_rate, fixed_freq, dc_type
     )
     swaps.append(swap19)
-
-    ########################################
 
     libor_curve = IborSingleCurve(value_dt, depos, fras, swaps)
 
@@ -286,10 +257,10 @@ def buildIborSingleCurve(value_dt):
     return libor_curve
 
 
-###############################################################################
+########################################################################################
 
 
-def test_LiborSwap():
+def test_libor_swap():
 
     # I have tried to reproduce the example from the blog by Ioannis Rigopoulos
     # https://blog.deriscope.com/index.php/en/excel-interest-rate-swap-price-dual-bootstrapping-curve
@@ -303,7 +274,7 @@ def test_LiborSwap():
     float_spread = 0.0
     float_freq_type = FrequencyTypes.SEMI_ANNUAL
     float_dc_type = DayCountTypes.ACT_360
-    firstFixing = -0.00268
+    first_fixing = -0.00268
 
     swap_cal_type = CalendarTypes.WEEKEND
     bd_type = BusDayAdjustTypes.FOLLOWING
@@ -334,8 +305,8 @@ def test_LiborSwap():
 
     value_dt = Date(30, 11, 2018)
     settle_dt = value_dt.add_days(2)
-    libor_curve = buildIborSingleCurve(value_dt)
-    v = swap.value(settle_dt, libor_curve, libor_curve, firstFixing)
+    libor_curve = build_ibor_single_curve(value_dt)
+    v = swap.value(settle_dt, libor_curve, libor_curve, first_fixing)
 
     v_bbg = 388147.0
     test_cases.header("LABEL", "VALUE")
@@ -344,7 +315,7 @@ def test_LiborSwap():
     test_cases.print("DIFFERENCE VALUE", v_bbg - v)
 
 
-###############################################################################
+########################################################################################
 
 
 def test_dp_example():
@@ -409,9 +380,7 @@ def test_dp_example():
 
     value_dt = start_dt
 
-    curve = DiscountCurve(
-        value_dt, dts, np.array(dfs), InterpTypes.FLAT_FWD_RATES
-    )
+    curve = DiscountCurve(value_dt, dts, np.array(dfs), InterpTypes.FLAT_FWD_RATES)
 
     v = swap.value(value_dt, curve, curve)
 
@@ -423,9 +392,8 @@ def test_dp_example():
     test_cases.print("Swap Value on a Notional of $1M:", v)
 
 
-###############################################################################
+########################################################################################
 
-
-test_LiborSwap()
+test_libor_swap()
 test_dp_example()
-test_cases.compareTestCases()
+test_cases.compare_test_cases()

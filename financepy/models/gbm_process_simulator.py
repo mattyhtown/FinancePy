@@ -1,25 +1,33 @@
-##############################################################################
 # Copyright (C) 2018, 2019, 2020 Dominic O'Kane
-##############################################################################
 
 import numpy as np
 from numba import njit  # , float64, int64
+import numba as nb
+
 from ..utils.math import cholesky
 from ..utils.error import FinError
 
-###############################################################################
 # WE SIMULATE GEOMETRIC BROWNIAN MOTION WITH DIFFERENT CUTS ACROSS 3D SPACE
 # OF ASSETS, PATHS AND TIME STEPS.
-###############################################################################
 
 # Seed the random generator globally for reproducibility
 np.random.seed(42)
 
+########################################################################################
 
-@njit
+
+from typing import Tuple
+
+@njit(cache=True, parallel=False)
 def get_paths_times(
-    num_paths, num_time_steps, t, mu, stock_price, volatility, seed
-):
+    num_paths: int,
+    num_time_steps: int,
+    t: float,
+    mu: float,
+    stock_price: float,
+    volatility: float,
+    seed: int
+) -> Tuple[np.ndarray, np.ndarray]:
     """Get the simulated GBM process for a single asset with even num paths and
     time steps. Inputs include the number of time steps, paths, the drift mu,
     stock price, volatility and a seed.
@@ -50,7 +58,7 @@ def get_paths_times(
 
     for it in range(1, num_time_steps + 1):
         g_1d = np.random.standard_normal((num_paths_even))
-        for ip in range(0, num_paths_even):
+        for ip in nb.prange(num_paths_even):
             w = np.exp(g_1d[ip] * vsqrt_dt)
             ip_start = ip * 2
             s_all[ip_start, it] = s_all[ip_start, it - 1] * m * w
@@ -59,21 +67,21 @@ def get_paths_times(
     return t_all, s_all
 
 
-###############################################################################
+########################################################################################
 
 
-@njit
+@njit(fastmath=True, cache=True)
 def get_assets_paths_times(
-    num_assets,
-    num_paths,
-    num_time_steps,
-    t,
-    mus,
-    stock_prices,
-    volatilities,
-    corr_matrix,
-    seed,
-):
+    num_assets: int,
+    num_paths: int,
+    num_time_steps: int,
+    t: float,
+    mus: np.ndarray,
+    stock_prices: np.ndarray,
+    volatilities: np.ndarray,
+    corr_matrix: np.ndarray,
+    seed: int
+) -> Tuple[np.ndarray, np.ndarray]:
     """Get the simulated GBM process for a number of assets and paths and num
     time steps. Inputs include the number of assets, paths, the vector of mus,
     stock prices, volatilities, a correlation matrix and a seed.
@@ -104,10 +112,10 @@ def get_assets_paths_times(
     if mus.shape[0] != num_assets:
         raise FinError("Drift mu vector incorrect size.")
 
-    if (
-        corr_matrix.shape[0] != num_assets
-        and corr_matrix.shape[1] != num_assets
-    ):
+    if corr_matrix.shape[0] != num_assets:
+        raise FinError("Correlation matrix incorrect size.")
+
+    if corr_matrix.shape[1] != num_assets:
         raise FinError("Correlation matrix incorrect size.")
 
     np.random.seed(seed)
@@ -118,16 +126,14 @@ def get_assets_paths_times(
     s_all = np.empty((num_assets, num_paths, num_time_steps + 1))
     t_all = np.linspace(0, t, num_time_steps + 1)
 
-    g = np.random.standard_normal(
-        (num_paths_even, num_time_steps + 1, num_assets)
-    )
+    g = np.random.standard_normal((num_paths_even, num_time_steps + 1, num_assets))
     c = cholesky(corr_matrix)
     g_corr = np.empty((num_paths_even, num_time_steps + 1, num_assets))
 
     # or use g_corr = np.einsum('ijk,kl->ijl', g, c)
 
     # Calculate the Cholesky dot product
-    for ip in range(0, num_paths_even):
+    for ip in nb.prange(num_paths_even):
         for it in range(0, num_time_steps + 1):
             for ia in range(0, num_assets):
                 g_corr[ip][it][ia] = 0.0
@@ -137,7 +143,7 @@ def get_assets_paths_times(
     for ia in range(0, num_assets):
         s_all[ia, :, 0] = stock_prices[ia]
 
-    for ip in range(0, num_paths_even):
+    for ip in nb.prange(num_paths_even):
         ip_start = ip * 2
         for it in range(1, num_time_steps + 1):
             for ia in range(0, num_assets):
@@ -145,27 +151,25 @@ def get_assets_paths_times(
                 w = np.exp(z * vsqrt_dts[ia])
                 v = m[ia]
                 s_all[ia, ip_start, it] = s_all[ia, ip_start, it - 1] * v * w
-                s_all[ia, ip_start + 1, it] = (
-                    s_all[ia, ip_start + 1, it - 1] * v / w
-                )
+                s_all[ia, ip_start + 1, it] = s_all[ia, ip_start + 1, it - 1] * v / w
 
     return t_all, s_all
 
 
-###############################################################################
+########################################################################################
 
 
-@njit
+@njit(fastmath=True, cache=True)
 def get_assets_paths(
-    num_assets,
-    num_paths,
-    t,
-    mus,
-    stock_prices,
-    volatilities,
-    corr_matrix,
-    seed,
-):
+    num_assets: int,
+    num_paths: int,
+    t: float,
+    mus: np.ndarray,
+    stock_prices: np.ndarray,
+    volatilities: np.ndarray,
+    corr_matrix: np.ndarray,
+    seed: int
+) -> Tuple[np.ndarray, np.ndarray]:
     """Get the simulated GBM process for a number of assets and paths for one
     time step. Inputs include the number of assets, paths, the vector of mus,
     stock prices, volatilities, a correlation matrix and a seed.
@@ -195,10 +199,7 @@ def get_assets_paths(
     if mus.shape[0] != num_assets:
         raise FinError("Drift mu vector incorrect size.")
 
-    if (
-        corr_matrix.shape[0] != num_assets
-        or corr_matrix.shape[1] != num_assets
-    ):
+    if corr_matrix.shape[0] != num_assets or corr_matrix.shape[1] != num_assets:
         raise FinError("Correlation matrix incorrect size.")
 
     np.random.seed(seed)
@@ -215,13 +216,13 @@ def get_assets_paths(
 
     # Calculate the dot product
     for ia in range(0, num_assets):
-        for ip in range(0, num_paths_even):
+        for ip in nb.prange(num_paths_even):
             g_corr[ip][ia] = 0.0
             for ib in range(0, num_assets):
                 g_corr[ip][ia] += g[ip][ib] * c[ia][ib]
 
     for ia in range(0, num_assets):
-        for ip in range(0, num_paths_even):
+        for ip in nb.prange(num_paths_even):
             z = g_corr[ip, ia]
             w = np.exp(z * vsqrt_dts[ia])
             ip_start = ip * 2
@@ -229,6 +230,3 @@ def get_assets_paths(
             s_all[ia, ip_start + 1] = stock_prices[ia] * m[ia] / w
 
     return t_all, s_all
-
-
-###############################################################################
