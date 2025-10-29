@@ -88,6 +88,29 @@ Contact me at dominic.okane at edhec.edu.
 
 FinancePy depends on Numpy, Numba, Scipy and basic python libraries such as os, sys and datetime.
 
+### Optional LangGraph Support
+
+An optional module integrates `langgraph` so workflows can be built around FinancePy calculations. To enable it, install the extra dependency:
+
+```
+pip install langgraph
+```
+
+The helper :func:`financepy.utils.langgraph_utils.build_black_scholes_graph` creates a simple pricing graph driven by a language model.
+
+### DAX 0DTE Trading Example
+
+Sample intraday DAX prices are provided to demonstrate same-day option trading. Utilities in
+``financepy.trading.dax_odte`` load this data, create a ``TradingEnvironment`` and price
+options expiring today:
+
+```python
+from financepy.trading.dax_odte import create_environment, price_intraday_option
+
+env = create_environment()
+price = price_intraday_option(env.current_price, strike=16000, rate=0.0, vol=0.2)
+```
+
 ## Changelog
 
 See the changelog for a detailed history of changes.
