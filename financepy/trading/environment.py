@@ -48,14 +48,9 @@ class TradingEnvironment:
         """
         price = self.data.loc[self.current_step, "Close"]
 
-        if action > 0:
+        if action != 0:
             self.position += action
             self.cash -= price * action
-        elif action < 0:
-            self.position += action
-            self.cash -= price * action
-        else:
-            pass
 
         portfolio_value = self.cash + self.position * price
         self.history.append(
