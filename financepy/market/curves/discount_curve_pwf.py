@@ -1,12 +1,12 @@
-##############################################################################
 # Copyright (C) 2018, 2019, 2020 Dominic O'Kane
-##############################################################################
+
+from typing import Union
 
 import numpy as np
 
 from ...utils.date import Date
 from ...utils.error import FinError
-from ...utils.global_vars import g_small
+from ...utils.global_vars import G_SMALL
 from ...utils.math import test_monotonicity
 from ...utils.frequency import FrequencyTypes
 from ...utils.helpers import label_to_string
@@ -15,22 +15,23 @@ from ...utils.day_count import DayCountTypes
 from ...utils.helpers import times_from_dates
 from ...market.curves.discount_curve import DiscountCurve
 
-
-###############################################################################
+########################################################################################
 
 
 class DiscountCurvePWF(DiscountCurve):
     """Curve is made up of a series of zero rates sections with each having
     a piecewise flat zero rate. The default compounding assumption is
-    continuous. The class inherits methods from FinDiscountCurve."""
+    continuous. The class inherits methods from DiscountCurve."""
+
+    ####################################################################################
 
     def __init__(
         self,
         value_dt: Date,
-        zero_dts: list,
-        zero_rates: (list, np.ndarray),
+        zero_dts: list[Date],
+        zero_rates: Union[list, np.ndarray],
         freq_type: FrequencyTypes = FrequencyTypes.CONTINUOUS,
-        day_count_type: DayCountTypes = DayCountTypes.ACT_ACT_ISDA,
+        dc_type: DayCountTypes = DayCountTypes.ACT_ACT_ISDA,
     ):
         """Creates a discount curve using a vector of times and zero rates
         that assumes that the zero rates are piecewise flat."""
@@ -48,18 +49,18 @@ class DiscountCurvePWF(DiscountCurve):
         self._zero_dts = zero_dts
         self._zero_rates = np.array(zero_rates)
         self.freq_type = freq_type
-        self.dc_type = day_count_type
+        self.dc_type = dc_type
 
         dc_times = times_from_dates(zero_dts, self.value_dt, self.dc_type)
 
-        self.times = np.array(dc_times)
+        self._times = np.array(dc_times)
 
-        if test_monotonicity(self.times) is False:
+        if test_monotonicity(self._times) is False:
             raise FinError("Times are not sorted in increasing order")
 
-    ###########################################################################
+    ####################################################################################
 
-    def _zero_rate(self, times: (float, np.ndarray, list)):
+    def _zero_rate(self, times: Union[float, np.ndarray, list]):
         """The piecewise flat zero rate is selected and returned."""
 
         if isinstance(times, float):
@@ -68,7 +69,7 @@ class DiscountCurvePWF(DiscountCurve):
         if np.any(times < 0.0):
             raise FinError("All times must be positive")
 
-        times = np.maximum(times, g_small)
+        times = np.maximum(times, G_SMALL)
 
         zero_rates = []
 
@@ -76,9 +77,9 @@ class DiscountCurvePWF(DiscountCurve):
             l_index = 0
             found = 0
 
-            num_times = len(self.times)
+            num_times = len(self._times)
             for i in range(1, num_times):
-                if self.times[i] > t:
+                if self._times[i] > t:
                     l_index = i - 1
                     found = 1
                     break
@@ -94,9 +95,9 @@ class DiscountCurvePWF(DiscountCurve):
 
         return np.array(zero_rates)
 
-    ###########################################################################
+    ####################################################################################
 
-    def _fwd(self, times: (np.ndarray, list)):
+    def _fwd(self, times: Union[np.ndarray, list]):
         """Calculate the continuously compounded forward rate at the forward
         time provided. This is done by perturbing the time by a small amount
         and measuring the change in the log of the discount factor divided by
@@ -116,9 +117,9 @@ class DiscountCurvePWF(DiscountCurve):
 
         return fwd
 
-    ###########################################################################
+    ####################################################################################
 
-    def df(self, dates: (Date, list)):
+    def df(self, dates: Union[Date, list]):
         """Return discount factors given a single or vector of dates. The
         discount factor depends on the rate and this in turn depends on its
         compounding frequency and it defaults to continuous compounding. It
@@ -136,7 +137,7 @@ class DiscountCurvePWF(DiscountCurve):
 
         return df
 
-    ###########################################################################
+    ####################################################################################
 
     def __repr__(self):
 
@@ -147,11 +148,8 @@ class DiscountCurvePWF(DiscountCurve):
         s += label_to_string("FREQUENCY", (self.freq_type))
         return s
 
-    ###########################################################################
+    ####################################################################################
 
     def _print(self):
         """Simple print function for backward compatibility."""
         print(self)
-
-
-###############################################################################

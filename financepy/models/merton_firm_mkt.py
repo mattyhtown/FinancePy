@@ -1,42 +1,43 @@
-##############################################################################
 # Copyright (C) 2018, 2019, 2020 Dominic O'Kane
-##############################################################################
+
+from typing import Union, Any
 
 import numpy as np
 from scipy import optimize
 
-from ..utils.math import N
+from ..utils.math import normcdf
 from ..utils.helpers import label_to_string, check_argument_types
 from ..utils.error import FinError
 from .merton_firm import MertonFirm
 
-###############################################################################
+########################################################################################
 
 
-def _fobj(x, *args):
-    """ Find value of asset value and vol that fit equity value and vol """
+def _fobj(x: Any, *args: Any) -> float:
+    """Find value of asset value and vol that fit equity value and vol"""
 
-    A, vA = x
+    a, v_a = x
 
-    E = args[0]
-    vE = args[1]
-    L = args[2]
+    e = args[0]
+    v_e = args[1]
+    l = args[2]
     t = args[3]
     r = args[4]
 
-    lvg = A / L
-    sigmaRootT = vA * np.sqrt(t)
-    d1 = np.log(lvg) + (r + 0.5 * vA ** 2) * t
-    d1 = d1 / sigmaRootT
-    d2 = d1 - sigmaRootT
+    lvg = a / l
+    sigma_root_t = v_a * np.sqrt(t)
+    d1 = np.log(lvg) + (r + 0.5 * v_a**2) * t
+    d1 = d1 / sigma_root_t
+    d2 = d1 - sigma_root_t
 
-    vE_LHS = (A / E) * N(d1) * vA
-    E_LHS = A * N(d1) - L * np.exp(-r * t) * N(d2)
-    obj = (E - E_LHS)**2 + (vE - vE_LHS)**2
+    v_e_lhs = (a / e) * normcdf(d1) * v_a
+    e_lhs = a * normcdf(d1) - l * np.exp(-r * t) * normcdf(d2)
+    obj = (e - e_lhs) ** 2 + (v_e - v_e_lhs) ** 2
 
     return obj
 
-###############################################################################
+
+########################################################################################
 
 
 class MertonFirmMkt(MertonFirm):
@@ -49,15 +50,19 @@ class MertonFirmMkt(MertonFirm):
     simultaneous equations.
     """
 
-    def __init__(self,
-                 equity_value: (float, list, np.ndarray),
-                 bond_face: (float, list, np.ndarray),
-                 years_to_maturity: (float, list, np.ndarray),
-                 risk_free_rate: (float, list, np.ndarray),
-                 asset_growth_rate: (float, list, np.ndarray),
-                 equity_volatility: (float, list, np.ndarray)):
-        """ Create an object that holds all of the model parameters. These
-        parameters may be vectorised. """
+    ####################################################################################
+
+    def __init__(
+        self,
+        equity_value: Union[float, np.ndarray],
+        bond_face: Union[float, np.ndarray],
+        years_to_maturity: Union[float, np.ndarray],
+        risk_free_rate: Union[float, np.ndarray],
+        asset_growth_rate: Union[float, np.ndarray],
+        equity_volatility: Union[float, np.ndarray],
+    ):
+        """Create an object that holds all of the model parameters. These
+        parameters may be vectorised."""
 
         check_argument_types(self.__init__, locals())
 
@@ -79,25 +84,27 @@ class MertonFirmMkt(MertonFirm):
         if isinstance(equity_volatility, float):
             equity_volatility = [equity_volatility]
 
-        self._E = np.array(equity_value)
-        self._L = np.array(bond_face)
+        self._e = np.array(equity_value)
+        self._l = np.array(bond_face)
         self._t = np.array(years_to_maturity)
         self._r = np.array(risk_free_rate)
         self._mu = np.array(asset_growth_rate)
-        self._vE = np.array(equity_volatility)
+        self._ve = np.array(equity_volatility)
 
-        nmax = max(len(self._E),
-                   len(self._L),
-                   len(self._t),
-                   len(self._r),
-                   len(self._mu),
-                   len(self._vE))
+        nmax = max(
+            len(self._e),
+            len(self._l),
+            len(self._t),
+            len(self._r),
+            len(self._mu),
+            len(self._ve),
+        )
 
-        if len(self._E) != nmax and len(self._E) > 1:
-            raise FinError("Len E must be 1 or maximum length of arrays")
+        if len(self._e) != nmax and len(self._e) > 1:
+            raise FinError("Len e must be 1 or maximum length of arrays")
 
-        if len(self._L) != nmax and len(self._L) > 1:
-            raise FinError("Len L must be 1 or maximum length of arrays")
+        if len(self._l) != nmax and len(self._l) > 1:
+            raise FinError("Len l must be 1 or maximum length of arrays")
 
         if len(self._t) != nmax and len(self._t) > 1:
             raise FinError("Len T must be 1 or maximum length of arrays")
@@ -108,38 +115,38 @@ class MertonFirmMkt(MertonFirm):
         if len(self._mu) != nmax and len(self._mu) > 1:
             raise FinError("Len mu must be 1 or maximum length of arrays")
 
-        if len(self._vE) != nmax and len(self._vE) > 1:
+        if len(self._ve) != nmax and len(self._ve) > 1:
             raise FinError("Len mu must be 1 or maximum length of arrays")
 
         self._nmax = nmax
         self._solve_for_asset_value_and_vol()
-        self._D = self.debt_value()
+        self._d = self.debt_value()
 
-###############################################################################
+    ####################################################################################
 
-    def _solve_for_asset_value_and_vol(self):
+    def _solve_for_asset_value_and_vol(self) -> None:
 
-        self._A = []
-        self._vA = []
+        self._a = []
+        self._va = []
 
         for i in range(0, self._nmax):
 
             argtuple = ()
 
-            if len(self._E) == self._nmax:
-                argtuple += (self._E[i],)
+            if len(self._e) == self._nmax:
+                argtuple += (self._e[i],)
             else:
-                argtuple += (self._E[0],)
+                argtuple += (self._e[0],)
 
-            if len(self._vE) == self._nmax:
-                argtuple += (self._vE[i],)
+            if len(self._ve) == self._nmax:
+                argtuple += (self._ve[i],)
             else:
-                argtuple += (self._vE[0],)
+                argtuple += (self._ve[0],)
 
-            if len(self._L) == self._nmax:
-                argtuple += (self._L[i],)
+            if len(self._l) == self._nmax:
+                argtuple += (self._l[i],)
             else:
-                argtuple += (self._L[0],)
+                argtuple += (self._l[0],)
 
             if len(self._t) == self._nmax:
                 argtuple += (self._t[i],)
@@ -156,22 +163,20 @@ class MertonFirmMkt(MertonFirm):
 
             result = optimize.minimize(_fobj, x0, args=argtuple, tol=1e-9)
 
-            self._A.append(result.x[0])
-            self._vA.append(result.x[1])
+            self._a.append(result.x[0])
+            self._va.append(result.x[1])
 
-        self._A = np.array(self._A)
-        self._vA = np.array(self._vA)
+        self._a = np.array(self._a)
+        self._va = np.array(self._va)
 
-###############################################################################
+    ####################################################################################
 
-    def __repr__(self):
+    def __repr__(self) -> str:
 
         s = label_to_string("OBJECT TYPE", type(self).__name__)
-        s += label_to_string("EQUITY VALUE", self._E)
-        s += label_to_string("BOND FACE", self._L)
+        s += label_to_string("EQUITY VALUE", self._e)
+        s += label_to_string("BOND FACE", self._l)
         s += label_to_string("YEARS TO MATURITY", self._t)
         s += label_to_string("ASSET GROWTH", self._mu)
-        s += label_to_string("EQUITY VOLATILITY", self._vE)
+        s += label_to_string("EQUITY VOLATILITY", self._ve)
         return s
-
-###############################################################################

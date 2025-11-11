@@ -1,28 +1,28 @@
-###############################################################################
 # Copyright (C) 2018, 2019, 2020 Dominic O'Kane
-###############################################################################
 
-from FinTestCases import FinTestCases, globalTestCaseMode
+import numpy as np
+
+import add_fp_to_path
+
 from financepy.market.volatility.fx_vol_surface import FinFXDeltaMethod
 from financepy.market.volatility.fx_vol_surface import FinFXATMMethod
 from financepy.market.volatility.fx_vol_surface import FXVolSurface
 from financepy.models.volatility_fns import vol_function_clark
 from financepy.utils.date import Date
 from financepy.market.curves.discount_curve_flat import DiscountCurveFlat
-import numpy as np
-import sys
 
-sys.path.append("..")
+from FinTestCases import FinTestCases, global_test_case_mode
+
+test_cases = FinTestCases(__file__, global_test_case_mode)
+
+########################################################################################
+
+PLOT_GRAPHS = False
 
 
-test_cases = FinTestCases(__file__, globalTestCaseMode)
+def test_fin_option_implied_dbn():
 
-###############################################################################
-
-
-def test_FinOptionImpliedDbn():
-
-    if 1 == 1:
+    if True:
 
         # Example from Book extract by Iain Clark using Tables 3.3 and 3.4
         # print("EURUSD EXAMPLE CLARK")
@@ -40,9 +40,9 @@ def test_FinOptionImpliedDbn():
         spot_fx_rate = 1.3465
 
         tenors = ["1M", "2M", "3M", "6M", "1Y", "2Y"]
-        atm_vols = [21.00, 21.00, 20.750, 19.400, 18.250, 17.677]
-        mkt_strangle_25d_vols = [0.65, 0.75, 0.85, 0.90, 0.95, 0.85]
-        rsk_reversal_25d_vols = [-0.20, -0.25, -0.30, -0.50, -0.60, -0.562]
+        atm_vols = np.array([21.00, 21.00, 20.750, 19.400, 18.250, 17.677])
+        mkt_strangle_25d_vols = np.array([0.65, 0.75, 0.85, 0.90, 0.95, 0.85])
+        rsk_reversal_25d_vols = np.array([-0.20, -0.25, -0.30, -0.50, -0.60, -0.562])
 
         notional_currency = for_name
 
@@ -66,34 +66,33 @@ def test_FinOptionImpliedDbn():
 
         #        fx_market.check_calibration(True)
 
-        PLOT_GRAPHS = False
         if PLOT_GRAPHS:
             fx_market.plot_vol_curves()
 
-        for iTenor in range(0, len(fx_market.tenors)):
+        for i_tenor in range(0, len(fx_market.tenors)):
 
-            F = fx_market.fwd[iTenor]
-            t_exp = fx_market.t_exp[iTenor]
+            f = fx_market.fwd[i_tenor]
+            t_exp = fx_market.t_exp[i_tenor]
 
-            start_fx = F * 0.05
-            end_fx = F * 5.0
+            start_fx = f * 0.05
+            end_fx = f * 5.0
 
             num_steps = 10000
-            dFX = (end_fx - start_fx) / num_steps
+            d_fx = (end_fx - start_fx) / num_steps
 
             #            dom_df = domestic_curve.df_t(t_exp)
             #            for_df = foreign_curve.df_t(t_exp)
             #            r_d = -np.log(dom_df) / t_exp
             #            r_f = -np.log(for_df) / t_exp
 
-            params = fx_market.parameters[iTenor]
+            params = fx_market.parameters[i_tenor]
 
             strikes = []
             vols = []
 
-            for iK in range(0, num_steps):
-                strike = start_fx + iK * dFX
-                vol = vol_function_clark(params, F, strike, t_exp)
+            for i_k in range(0, num_steps):
+                strike = start_fx + i_k * d_fx
+                vol = vol_function_clark(params, f, strike, t_exp)
                 strikes.append(strike)
                 vols.append(vol)
 
@@ -101,13 +100,13 @@ def test_FinOptionImpliedDbn():
             vols = np.array(vols)
 
 
+########################################################################################
+
 #            dbn = optionImpliedDbn(spot_fx_rate, t_exp, rd, rf, strikes, vols)
 #            print("SUM:", dbn.sum())
 #            plt.figure()
 #            plt.plot(dbn._x, dbn._densitydx)
 
-###############################################################################
 
-
-test_FinOptionImpliedDbn()
-test_cases.compareTestCases()
+test_fin_option_implied_dbn()
+test_cases.compare_test_cases()

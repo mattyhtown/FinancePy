@@ -1,6 +1,9 @@
 ##############################################################################
 # Copyright (C) 2018, 2019, 2020 Dominic O'Kane
 ##############################################################################
+
+from typing import Union
+
 import pandas as pd
 
 from ...utils.global_types import SwapTypes
@@ -13,7 +16,8 @@ from ...utils.day_count import DayCount, DayCountTypes
 from ...utils.helpers import label_to_string, check_argument_types
 from ...market.curves.discount_curve import DiscountCurve
 
-###############################################################################
+
+########################################################################################
 
 
 class IborFRA:
@@ -48,7 +52,7 @@ class IborFRA:
         self,
         start_dt: Date,  # The date the FRA starts to accrue
         # End of the Ibor rate period
-        maturity_dt_or_tenor: (Date, str),
+        maturity_dt_or_tenor: Union[Date, str],
         fra_rate: float,  # The fixed contractual FRA rate
         dc_type: DayCountTypes,  # For interest period
         notional: float = 100.0,
@@ -124,7 +128,7 @@ class IborFRA:
             df["payment_date"] = self.maturity_dt
             df["start_accrual_date"] = self.start_dt
             df["end_accrual_date"] = self.maturity_dt
-            df["year_frac"] = self.acc_factor
+            df["year_frac"] = acc_factor
             df["rate"] = libor_fwd - self.fra_rate
             df["payment"] = (
                 pay_fixed_sign
@@ -162,44 +166,35 @@ class IborFRA:
         # Get the Libor index from the index curve
         dc = DayCount(self.dc_type)
         acc_factor = dc.year_frac(self.start_dt, self.maturity_dt)[0]
-        dfIndex1 = index_curve.df(self.start_dt)
-        dfIndex2 = index_curve.df(self.maturity_dt)
-        liborFwd = (dfIndex1 / dfIndex2 - 1.0) / acc_factor
+        df_index_1 = index_curve.df(self.start_dt)
+        df_index_2 = index_curve.df(self.maturity_dt)
+        libor_fwd = (df_index_1 / df_index_2 - 1.0) / acc_factor
 
         # Get the discount factor from a discount curve
-        dfDiscount2 = discount_curve.df(self.maturity_dt)
-
-        v = acc_factor * (liborFwd - self.fra_rate) * dfDiscount2
+        df_discount_2 = discount_curve.df(self.maturity_dt)
+        v = acc_factor * (libor_fwd - self.fra_rate) * df_discount_2
 
         # Forward value the FRA to the value date
         df_to_valuation_date = discount_curve.df(valuation_date)
         v = v * self.notional / df_to_valuation_date
 
-        if (
-            self.pay_fixed_rate is True
-        ):  # VP: ??? pay fixed should be positive notional
+        if self.pay_fixed_rate is True:  # VP: ??? pay fixed should be positive notional
             v *= -1.0
 
         out = {
             "type": type(self).__name__,
-            "start_date": self.start_dt,
-            "maturity_date": self.maturity_dt,
-            "day_count_type": self.dc_type.name,
+            "start_dt": self.start_dt,
+            "maturity_dt": self.maturity_dt,
+            "dc_type": self.dc_type.name,
             "fixed_leg_type": (
-                SwapTypes.PAY.name
-                if self.pay_fixed_rate
-                else SwapTypes.RECEIVE.name
+                SwapTypes.PAY.name if self.pay_fixed_rate else SwapTypes.RECEIVE.name
             ),
             "notional": self.notional,
             "contract_rate": self.fra_rate,
-            "market_rate": liborFwd,
-            "spot_pvbp": acc_factor * dfDiscount2,
-            "fwd_pvbp": acc_factor
-            * dfDiscount2
-            / discount_curve.df(self.start_dt),
-            "unit_value": acc_factor
-            * dfDiscount2
-            * (liborFwd - self.fra_rate),
+            "market_rate": libor_fwd,
+            "spot_pvbp": acc_factor * df_discount_2,
+            "fwd_pvbp": acc_factor * df_discount_2 / discount_curve.df(self.start_dt),
+            "unit_value": acc_factor * df_discount_2 * (libor_fwd - self.fra_rate),
             "value": v,
             # ignoring pay_fixed flag (which is wrong anyway I think),
             # bus day adj type, calendar for now
@@ -256,4 +251,4 @@ class IborFRA:
         print(self)
 
 
-###############################################################################
+########################################################################################

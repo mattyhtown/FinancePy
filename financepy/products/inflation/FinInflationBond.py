@@ -1,11 +1,11 @@
-###############################################################################
+########################################################################################
 # Copyright (C) 2018, 2019, 2020 Dominic O'Kane
-###############################################################################
+########################################################################################
 
-###############################################################################
+########################################################################################
 # ADD Inflation assumption and resulting yield calculation
 # Pricing using inflation curve and discount curve
-###############################################################################
+########################################################################################
 
 
 from ...utils.date import Date
@@ -16,7 +16,7 @@ from ...utils.day_count import DayCountTypes
 from ...utils.helpers import label_to_string, check_argument_types
 from ..bonds.bond import Bond, YTMCalcType
 
-###############################################################################
+########################################################################################
 
 
 class FinInflationBond(Bond):
@@ -85,7 +85,7 @@ class FinInflationBond(Bond):
         self.alpha = 0.0
 
         self._calculate_cpn_dts()
-        self._calculate_flows()
+        self._calculate_flow_amounts()
 
     ###########################################################################
 
@@ -127,9 +127,7 @@ class FinInflationBond(Bond):
 
     ###########################################################################
 
-    def inflation_accrued_interest(
-        self, settle_dt: Date, face: float, reference_cpi
-    ):
+    def inflation_accrued_interest(self, settle_dt: Date, face: float, reference_cpi):
         """Calculate the amount of coupon that has accrued between the
         previous coupon date and the settlement date. This is adjusted by the
         index ratio in line with the CPI growth since the bond base CPI date.
@@ -162,4 +160,4 @@ class FinInflationBond(Bond):
         print(self)
 
 
-###############################################################################
+########################################################################################

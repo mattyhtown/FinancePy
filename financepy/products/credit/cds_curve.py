@@ -3,11 +3,11 @@
 ##############################################################################
 
 import numpy as np
-import scipy.optimize as optimize
+from scipy import optimize
 
 from ...utils.date import Date
 from ...utils.error import FinError
-from ...utils.global_vars import g_days_in_year
+from ...utils.global_vars import G_DAYS_IN_YEARS
 from ...market.curves.interpolator import _uinterpolate, InterpTypes
 from ...utils.helpers import input_time, table_to_string
 from ...utils.day_count import DayCount
@@ -16,7 +16,9 @@ from ...utils.helpers import check_argument_types, _func_name
 from ...utils.helpers import label_to_string
 
 
-###############################################################################
+from numba import njit, float64
+
+########################################################################################
 
 
 def f(q, *args):
@@ -28,15 +30,15 @@ def f(q, *args):
     cds = args[2]
     recovery_rate = args[3]
 
-    num_points = len(curve._times)
-    curve._values[num_points - 1] = q
+    curve.set_last_q(q)
+
     # This is important - we calibrate a curve that makes the clean PV of the
     # CDS equal to zero and so we select the second element of the value tuple
     obj_fn = cds.value(value_dt, curve, recovery_rate)["clean_pv"]
     return obj_fn
 
 
-###############################################################################
+########################################################################################
 
 
 class CDSCurve:
@@ -61,9 +63,7 @@ class CDSCurve:
         check_argument_types(getattr(self, _func_name(), None), locals())
 
         if value_dt != libor_curve.value_dt:
-            raise FinError(
-                "Curve does not have same valuation date as Issuer curve."
-            )
+            raise FinError("Curve does not have same valuation date as Issuer curve.")
 
         self.value_dt = value_dt
         self.cds_contracts = cds_contracts
@@ -73,10 +73,10 @@ class CDSCurve:
         self.built_ok = False
 
         self._times = []
-        self._values = []
+        self._qs = []
 
         if len(self.cds_contracts) > 0:
-            self._build_curve()
+            self.build_curve()
         else:
             pass  # In some cases we allow None to be passed
 
@@ -84,13 +84,43 @@ class CDSCurve:
 
     ###########################################################################
 
+    @property
     def times(self):
-        return self._times
+        return self._times.copy()
 
     ###########################################################################
 
-    def values(self):
-        return self._values
+    @property
+    def qs(self):
+        return self._qs.copy()
+
+    @property
+    def dfs(self):
+        return self.libor_curve.dfs
+
+    def set_times(self, times: np.array):
+        """Set the times vector"""
+        self._times = times
+
+    def set_qs(self, qvector: np.array):
+        """Set the survival probability curve"""
+        self._qs = qvector
+
+    def set_q(self, index, q):
+        """Set the survival probability at a specific index."""
+
+        n_points = len(self.qs)
+
+        if index < 0 or index >= n_points:
+            raise IndexError("Index out of bounds")
+
+        self._qs[index] = q
+
+    def set_last_q(self, q):
+        """Set the discount factor at last index."""
+
+        n_points = len(self.qs)
+        self._qs[n_points - 1] = q
 
     ###########################################################################
 
@@ -115,7 +145,7 @@ class CDSCurve:
         supports vectorisation."""
 
         if isinstance(dt, Date):
-            t = (dt - self.value_dt) / g_days_in_year
+            t = (dt - self.value_dt) / G_DAYS_IN_YEARS
         elif isinstance(dt, list):
             t = np.array(dt)
         else:
@@ -129,16 +159,14 @@ class CDSCurve:
             qs = np.zeros(n)
             for i in range(0, n):
                 qs[i] = _uinterpolate(
-                    t[i], self._times, self._values, self.interp_method.value
+                    t[i], self._times, self._qs, self.interp_method.value
                 )
             return qs
         elif isinstance(t, float):
-            q = _uinterpolate(
-                t, self._times, self._values, self.interp_method.value
-            )
+            q = _uinterpolate(t, self._times, self._qs, self.interp_method.value)
             return q
-        else:
-            raise FinError("Unknown time type")
+
+        raise FinError("Unknown time type")
 
     ###########################################################################
 
@@ -147,7 +175,7 @@ class CDSCurve:
         function supports vectorisation."""
 
         if isinstance(dt, Date):
-            t = (dt - self.value_dt) / g_days_in_year
+            t = (dt - self.value_dt) / G_DAYS_IN_YEARS
         elif isinstance(dt, list):
             t = np.array(dt)
         else:
@@ -159,7 +187,7 @@ class CDSCurve:
 
     ###########################################################################
 
-    def _build_curve(self):
+    def build_curve(self):
         """Construct the CDS survival curve from a set of CDS contracts"""
 
         self._validate(self.cds_contracts)
@@ -167,7 +195,7 @@ class CDSCurve:
 
         # we size the vectors to include time zero
         self._times = np.array([0.0])
-        self._values = np.array([1.0])
+        self._qs = np.array([1.0])
 
         for i in range(0, num_times):
 
@@ -180,21 +208,24 @@ class CDSCurve:
                 self.recovery_rate,
             )
 
-            t_mat = (maturity_dt - self.value_dt) / g_days_in_year
-            q = self._values[i]
+            t_mat = (maturity_dt - self.value_dt) / G_DAYS_IN_YEARS
+            q = self._qs[i]
 
             self._times = np.append(self._times, t_mat)
-            self._values = np.append(self._values, q)
+            self._qs = np.append(self._qs, q)
 
-            optimize.newton(
-                f,
-                x0=q,
-                fprime=None,
-                args=argtuple,
-                tol=1e-7,
-                maxiter=50,
-                fprime2=None,
-            )
+            if 1==1:
+                optimize.newton(
+                    f,
+                    x0=q,
+                    fprime=None,
+                    args=argtuple,
+                    tol=1e-7,
+                    maxiter=50,
+                    fprime2=None,
+                )
+            else:
+                pass
 
     ###########################################################################
 
@@ -211,7 +242,7 @@ class CDSCurve:
 
     ###########################################################################
 
-    def fwd_rate(self, date1, date2, day_count_type):
+    def fwd_rate(self, date1, date2, dc_type):
         """Calculate the forward rate according between dates date1 and date2
         according to the specified day count convention."""
 
@@ -221,7 +252,7 @@ class CDSCurve:
         if date2 < date1:
             raise FinError("Date2 must not be before Date1")
 
-        day_count = DayCount(day_count_type)
+        day_count = DayCount(dc_type)
         year_frac = day_count.year_frac(date1, date2)[0]
         df1 = self.df(date1)
         df2 = self.df(date2)
@@ -254,7 +285,11 @@ class CDSCurve:
         """Print out the details of the survival probability curve."""
         s = label_to_string("OBJECT TYPE", type(self).__name__)
         header = "TIME,SURVIVAL_PROBABILITY"
-        value_table = [self._times, self._values]
+
+        print("XXXXX")
+        print(self._qs)
+
+        value_table = [self._times, self._qs]
         precision = "10.7f"
         s += table_to_string(header, value_table, precision)
         return s
@@ -266,4 +301,4 @@ class CDSCurve:
         print(self)
 
 
-###############################################################################
+########################################################################################

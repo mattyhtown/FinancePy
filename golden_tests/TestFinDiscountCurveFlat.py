@@ -1,21 +1,20 @@
-###############################################################################
 # Copyright (C) 2018, 2019, 2020 Dominic O'Kane
-###############################################################################
 
-from FinTestCases import FinTestCases, globalTestCaseMode
+import add_fp_to_path
+
 from financepy.utils.frequency import FrequencyTypes
 from financepy.utils.date import Date
 from financepy.market.curves.discount_curve_flat import DiscountCurveFlat
-import sys
-sys.path.append("..")
+
+from FinTestCases import FinTestCases, global_test_case_mode
 
 
-test_cases = FinTestCases(__file__, globalTestCaseMode)
+test_cases = FinTestCases(__file__, global_test_case_mode)
 
-##############################################################################
+########################################################################################
 
 
-def test_FinFlatCurve():
+def test_fin_flat_curve():
 
     curve_dt = Date(1, 1, 2019)
     months = range(1, 60, 3)
@@ -47,8 +46,8 @@ def test_FinFlatCurve():
     dfs = flat_curve.df(dates)
     test_cases.print(compounding, dfs)
 
-###############################################################################
 
+########################################################################################
 
-test_FinFlatCurve()
-test_cases.compareTestCases()
+test_fin_flat_curve()
+test_cases.compare_test_cases()

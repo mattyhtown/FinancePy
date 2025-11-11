@@ -1,25 +1,22 @@
-###############################################################################
 # Copyright (C) 2018, 2019, 2020 Dominic O'Kane
-###############################################################################
 
-from FinTestCases import FinTestCases, globalTestCaseMode
+import add_fp_to_path
+
 from financepy.utils.date import Date
 from financepy.products.rates.ibor_deposit import IborDeposit
 from financepy.products.rates.ibor_single_curve import IborSingleCurve
 from financepy.utils.calendar import CalendarTypes
 from financepy.utils.day_count import DayCountTypes
 from financepy.products.fx.fx_forward import FXForward
-import sys
 
-sys.path.append("..")
+from FinTestCases import FinTestCases, global_test_case_mode
 
+test_cases = FinTestCases(__file__, global_test_case_mode)
 
-test_cases = FinTestCases(__file__, globalTestCaseMode)
-
-##########################################################################
+########################################################################################
 
 
-def test_FinFXForward():
+def test_fin_fx_forward():
 
     #  https://stackoverflow.com/questions/48778712
     #  /fx-vanilla-call-price-in-quantlib-doesnt-match-bloomberg
@@ -33,10 +30,8 @@ def test_FinFXForward():
     currency_pair = for_name + dom_name  # Always ccy1ccy2
     spot_fx_rate = 1.300  # USD per EUR
     strike_fx_rate = 1.365  # USD per EUR
-    ccy1InterestRate = 0.02  # USD Rates
-    ccy2InterestRate = 0.05  # EUR rates
-
-    ###########################################################################
+    ccy1_interest_rate = 0.02  # USD Rates
+    ccy2_interest_rate = 0.05  # EUR rates
 
     spot_days = 0
     settle_dt = value_dt.add_weekdays(spot_days)
@@ -47,7 +42,7 @@ def test_FinFXForward():
     depos = []
     fras = []
     swaps = []
-    deposit_rate = ccy1InterestRate
+    deposit_rate = ccy1_interest_rate
     depo = IborDeposit(
         settle_dt,
         maturity_dt,
@@ -62,7 +57,7 @@ def test_FinFXForward():
     depos = []
     fras = []
     swaps = []
-    deposit_rate = ccy2InterestRate
+    deposit_rate = ccy2_interest_rate
     depo = IborDeposit(
         settle_dt,
         maturity_dt,
@@ -83,19 +78,14 @@ def test_FinFXForward():
 
     test_cases.header("SPOT FX", "FX FWD", "VALUE_BS")
 
-    fwd_value = fx_fwd.value(
-        value_dt, spot_fx_rate, domestic_curve, foreign_curve
-    )
+    fwd_value = fx_fwd.value(value_dt, spot_fx_rate, domestic_curve, foreign_curve)
 
-    fwd_fx_rate = fx_fwd.forward(
-        value_dt, spot_fx_rate, domestic_curve, foreign_curve
-    )
+    fwd_fx_rate = fx_fwd.forward(value_dt, spot_fx_rate, domestic_curve, foreign_curve)
 
     test_cases.print(spot_fx_rate, fwd_fx_rate, fwd_value)
 
 
-###############################################################################
+########################################################################################
 
-
-test_FinFXForward()
-test_cases.compareTestCases()
+test_fin_fx_forward()
+test_cases.compare_test_cases()

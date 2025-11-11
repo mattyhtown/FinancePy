@@ -1,9 +1,4 @@
-###############################################################################
 # Copyright (C) 2018, 2019, 2020 Dominic O'Kane
-###############################################################################
-
-import sys
-sys.path.append("..")
 
 from financepy.utils.calendar import DateGenRuleTypes
 from financepy.utils.calendar import BusDayAdjustTypes
@@ -13,8 +8,10 @@ from financepy.utils.frequency import FrequencyTypes
 from financepy.utils.date import Date
 from financepy.products.bonds.bond_annuity import BondAnnuity
 
+########################################################################################
 
-def test_SemiAnnual_BondAnnuity():
+
+def test_semi_annual__bond_annuity():
 
     settle_dt = Date(20, 6, 2018)
     face = 1000000
@@ -28,13 +25,9 @@ def test_SemiAnnual_BondAnnuity():
     dg_type = DateGenRuleTypes.BACKWARD
     basis_type = DayCountTypes.ACT_360
 
-    annuity = BondAnnuity(maturity_dt,
-                          coupon,
-                          freq_type,
-                          cal_type,
-                          bd_type,
-                          dg_type,
-                          basis_type)
+    annuity = BondAnnuity(
+        maturity_dt, coupon, freq_type, cal_type, bd_type, dg_type, basis_type
+    )
 
     annuity.calculate_payments(settle_dt, face)
 
@@ -50,7 +43,10 @@ def test_SemiAnnual_BondAnnuity():
     assert annuity.accrued_interest(settle_dt, face) == 0.0
 
 
-def test_Quarterly_BondAnnuity():
+########################################################################################
+
+
+def test_quarterly__bond_annuity():
 
     settle_dt = Date(20, 6, 2018)
     face = 1000000
@@ -65,13 +61,8 @@ def test_Quarterly_BondAnnuity():
     basis_type = DayCountTypes.ACT_360
 
     annuity = BondAnnuity(
-        maturity_dt,
-        coupon,
-        freq_type,
-        cal_type,
-        bd_type,
-        dg_type,
-        basis_type)
+        maturity_dt, coupon, freq_type, cal_type, bd_type, dg_type, basis_type
+    )
 
     annuity.calculate_payments(settle_dt, face)
 
@@ -87,7 +78,10 @@ def test_Quarterly_BondAnnuity():
     assert annuity.accrued_interest(settle_dt, face) == 0.0
 
 
-def test_Monthly_BondAnnuity():
+########################################################################################
+
+
+def test_monthly__bond_annuity():
 
     settle_dt = Date(20, 6, 2018)
     face = 1000000
@@ -101,18 +95,14 @@ def test_Monthly_BondAnnuity():
     dg_type = DateGenRuleTypes.BACKWARD
     basis_type = DayCountTypes.ACT_360
 
-    annuity = BondAnnuity(maturity_dt,
-                          coupon,
-                          freq_type,
-                          cal_type,
-                          bd_type,
-                          dg_type,
-                          basis_type)
+    annuity = BondAnnuity(
+        maturity_dt, coupon, freq_type, cal_type, bd_type, dg_type, basis_type
+    )
 
     annuity.calculate_payments(settle_dt, face)
 
-    assert len(annuity.flow_amounts) == 10*12 + 1
-    assert len(annuity.cpn_dts) == 10*12 + 1
+    assert len(annuity.flow_amounts) == 10 * 12 + 1
+    assert len(annuity.cpn_dts) == 10 * 12 + 1
 
     assert annuity.cpn_dts[0] == settle_dt
     assert annuity.cpn_dts[-1] == maturity_dt
@@ -123,7 +113,10 @@ def test_Monthly_BondAnnuity():
     assert annuity.accrued_interest(settle_dt, face) == 0.0
 
 
-def test_ForwardGen_BondAnnuity():
+########################################################################################
+
+
+def test_forward_gen__bond_annuity():
 
     settle_dt = Date(20, 6, 2018)
     face = 1000000
@@ -136,13 +129,9 @@ def test_ForwardGen_BondAnnuity():
     dg_type = DateGenRuleTypes.FORWARD
     basis_type = DayCountTypes.ACT_360
 
-    annuity = BondAnnuity(maturity_dt,
-                          coupon,
-                          freq_type,
-                          cal_type,
-                          bd_type,
-                          dg_type,
-                          basis_type)
+    annuity = BondAnnuity(
+        maturity_dt, coupon, freq_type, cal_type, bd_type, dg_type, basis_type
+    )
 
     annuity.calculate_payments(settle_dt, face)
 
@@ -158,7 +147,10 @@ def test_ForwardGen_BondAnnuity():
     assert annuity.accrued_interest(settle_dt, face) == 0.0
 
 
-def test_ForwardGenWithLongEndStub_BondAnnuity():
+########################################################################################
+
+
+def test_forward_gen_with_long_end_stub__bond_annuity():
 
     settle_dt = Date(20, 6, 2018)
     face = 1000000
@@ -171,13 +163,9 @@ def test_ForwardGenWithLongEndStub_BondAnnuity():
     dg_type = DateGenRuleTypes.FORWARD
     basis_type = DayCountTypes.ACT_360
 
-    annuity = BondAnnuity(maturity_dt,
-                          coupon,
-                          freq_type,
-                          cal_type,
-                          bd_type,
-                          dg_type,
-                          basis_type)
+    annuity = BondAnnuity(
+        maturity_dt, coupon, freq_type, cal_type, bd_type, dg_type, basis_type
+    )
 
     annuity.calculate_payments(settle_dt, face)
 
@@ -192,4 +180,7 @@ def test_ForwardGenWithLongEndStub_BondAnnuity():
 
     assert annuity.accrued_interest(settle_dt, face) == 0.0
 
-test_SemiAnnual_BondAnnuity()
+
+########################################################################################
+
+test_semi_annual__bond_annuity()

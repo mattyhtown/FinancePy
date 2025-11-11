@@ -1,24 +1,19 @@
-###############################################################################
 # Copyright (C) 2018, 2019, 2020 Dominic O'Kane
-###############################################################################
 
-import time
 import numpy as np
-from os.path import dirname, join
 
-import sys
+import add_fp_to_path
 
-sys.path.append("..")
-
-from FinTestCases import FinTestCases, globalTestCaseMode
-from financepy.utils.global_types import SwapTypes
+from FinTestCases import FinTestCases, global_test_case_mode
 from financepy.models.gbm_process_simulator import get_assets_paths_times
 from financepy.utils.math import corr_matrix_generator
 
-test_cases = FinTestCases(__file__, globalTestCaseMode)
+test_cases = FinTestCases(__file__, global_test_case_mode)
+
+########################################################################################
 
 
-def testFinGBMProcess():
+def test_fin_gbm_process():
 
     num_assets = 3
     num_paths = 6
@@ -44,8 +39,7 @@ def testFinGBMProcess():
     )
 
 
-###############################################################################
+########################################################################################
 
-
-testFinGBMProcess()
-test_cases.compareTestCases()
+test_fin_gbm_process()
+test_cases.compare_test_cases()

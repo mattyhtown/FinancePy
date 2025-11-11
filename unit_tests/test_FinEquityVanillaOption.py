@@ -1,6 +1,4 @@
-###############################################################################
 # Copyright (C) 2018, 2019, 2020 Dominic O'Kane
-###############################################################################
 
 from financepy.utils.global_types import OptionTypes
 from financepy.products.equity.equity_vanilla_option import EquityVanillaOption
@@ -10,10 +8,8 @@ from financepy.utils.date import Date
 
 
 expiry_date = Date(1, 7, 2015)
-call_option = EquityVanillaOption(
-    expiry_date, 100.0, OptionTypes.EUROPEAN_CALL
-)
-call_option_vector = EquityVanillaOption(
+call_option = EquityVanillaOption(expiry_date, 100.0, OptionTypes.EUROPEAN_CALL)
+call_optionormcdf_vector = EquityVanillaOption(
     [expiry_date] * 3, 100.0, OptionTypes.EUROPEAN_CALL
 )
 put_option = EquityVanillaOption(expiry_date, 100.0, OptionTypes.EUROPEAN_PUT)
@@ -27,15 +23,21 @@ model = BlackScholes(volatility)
 discount_curve = DiscountCurveFlat(value_date, interest_rate)
 dividend_curve = DiscountCurveFlat(value_date, dividend_yield)
 
+########################################################################################
+
 
 def test_call_option():
+
     v = call_option.value(
         value_date, stock_price, discount_curve, dividend_curve, model
     )
-    call_option_vector.value(
+    call_optionormcdf_vector.value(
         value_date, stock_price, discount_curve, dividend_curve, model
     ) == [v] * 3
     assert v.round(4) == 9.3021
+
+
+########################################################################################
 
 
 def test_greeks():
@@ -64,8 +66,10 @@ def test_greeks():
     ]
 
 
+########################################################################################
+
+
 def test_put_option():
-    v = put_option.value(
-        value_date, stock_price, discount_curve, dividend_curve, model
-    )
+
+    v = put_option.value(value_date, stock_price, discount_curve, dividend_curve, model)
     assert v.round(4) == 7.3478

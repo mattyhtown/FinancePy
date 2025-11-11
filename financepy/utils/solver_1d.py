@@ -1,6 +1,6 @@
-###############################################################################
+########################################################################################
 # Copyright (C) 2020 Saeed Amen, Dominic O'Kane
-###############################################################################
+########################################################################################
 
 from collections import namedtuple
 from numba import njit
@@ -9,7 +9,7 @@ import operator
 
 from .error import FinError
 
-###############################################################################
+########################################################################################
 ## from https://quanteconpy.readthedocs.io/en/latest/_modules/quantecon/optimize/root_finding.html #####################
 
 _ECONVERGED = 0
@@ -22,7 +22,7 @@ _rtol = 4 * np.finfo(float).eps
 
 results = namedtuple("results", "root function_calls iterations converged")
 
-###############################################################################
+########################################################################################
 
 
 @njit(cache=True, fastmath=True)
@@ -32,10 +32,10 @@ def _results(r):
     return x  # results(x, fun_calls, iterations, flag == 0)
 
 
-###############################################################################
+########################################################################################
 # DO NOT TOUCH THIS FUNCTION AS IT IS USED IN FX VOL CALIBRATION !!!!!!!!!
 # IT NEEDS TO PASS IN ARGS AS A TUPLE AS ONE OF THE ARGS IS AN NDARRAY
-###############################################################################
+########################################################################################
 # UNABLE TO NJIT THIS DUE TO ERROR
 # FIXED ERROR BY MAKING CACHE=FALSE!!!????
 
@@ -136,7 +136,7 @@ def newton_secant(func, x0, args=(), tol=1.48e-8, maxiter=50, disp=True):
     return p
 
 
-###############################################################################
+########################################################################################
 
 # @jit
 
@@ -329,8 +329,7 @@ def newton(
             if fder == 0:
                 if disp is True:
                     print(
-                        "Derivative is zero. Newton Failed to converge "
-                        + "after ",
+                        "Derivative is zero. Newton Failed to converge " + "after ",
                         str(itr + 1),
                         "iterations, value is ",
                         p0,
@@ -406,7 +405,7 @@ def newton(
     return p
 
 
-###############################################################################
+########################################################################################
 
 
 @njit(fastmath=True, cache=True)
@@ -560,7 +559,7 @@ def brent_max(func, a, b, args, xtol=1e-5, maxiter=500):
     return xf, fval, info
 
 
-###############################################################################
+########################################################################################
 
 # @jit(fastmath=True, cache=True)
 
@@ -603,7 +602,7 @@ def bisection(func, x1, x2, args, xtol=1e-6, maxiter=100):
     return None
 
 
-###############################################################################
+########################################################################################
 # https://github.com/linesd/minimize/blob/master/optimizer/minimize.py
 
 # The function uses conjugate gradients and approximate linesearches based
@@ -659,9 +658,7 @@ def minimize_wolfe_powel(
      Copyright (C) 2001 - 2006 by Carl Edward Rasmussen (2006-09-08).
      Converted to python by David Lines (2019-23-08)
     """
-    INT = (
-        0.1  # don't reevaluate within 0.1 of the limit of the current bracket
-    )
+    INT = 0.1  # don't reevaluate within 0.1 of the limit of the current bracket
     EXT = 3.0  # extrapolate maximum 3 times the current step size
     MAX = 20  # max 20 function evaluations per line search
     RATIO = 10  # maximum allowed slope ratio
@@ -747,14 +744,10 @@ def minimize_wolfe_powel(
             x2 = x3
             f2 = f3
             d2 = d3  # move point 3 to point 2
-            A = 6 * (f1 - f2) + 3 * (d2 + d1) * (
-                x2 - x1
-            )  # make cubic extrapolation
+            A = 6 * (f1 - f2) + 3 * (d2 + d1) * (x2 - x1)  # make cubic extrapolation
             B = 3 * (f2 - f1) - (2 * d1 + d2) * (x2 - x1)
             # num. error possible, ok!
-            x3 = x1 - d1 * (x2 - x1) ** 2 / (
-                B + np.sqrt(B * B - A * d1 * (x2 - x1))
-            )
+            x3 = x1 - d1 * (x2 - x1) ** 2 / (B + np.sqrt(B * B - A * d1 * (x2 - x1)))
 
             # num prob | wrong sign
             if np.iscomplex(x3) or np.isnan(x3) or np.isinf(x3) or x3 < 0:
@@ -782,9 +775,7 @@ def minimize_wolfe_powel(
                     f4 - f2 - d2 * (x4 - x2)
                 )  # quadratic interpolation
             else:
-                A = 6 * (f2 - f4) / (x4 - x2) + 3 * (
-                    d4 + d2
-                )  # cubic interpolation
+                A = 6 * (f2 - f4) / (x4 - x2) + 3 * (d4 + d2)  # cubic interpolation
                 B = 3 * (f4 - f2) - (2 * d2 + d4) * (x4 - x2)
                 # num. error possible, ok!
                 x3 = x2 + (np.sqrt(B * B - A * d2 * (x4 - x2) ** 2) - B) / A
@@ -807,9 +798,7 @@ def minimize_wolfe_powel(
             i += length < 0  # count epochs?!
             d3 = df3.T @ s  # new slope
 
-        if (
-            abs(d3) < -SIG * d0 and f3 < f0 + x3 * RHO * d0
-        ):  # if line search succeeded
+        if abs(d3) < -SIG * d0 and f3 < f0 + x3 * RHO * d0:  # if line search succeeded
             X = X + x3 * s
             f0 = f3
             fX.append(f0)
@@ -844,13 +833,11 @@ def minimize_wolfe_powel(
         convergence = fX[-1]  # return only the minimum function value
     else:
         # bundle convergence info
-        convergence = np.hstack(
-            (np.array(fX).reshape(-1, 1), np.array(Xd)[:, :, 0])
-        )
+        convergence = np.hstack((np.array(fX).reshape(-1, 1), np.array(Xd)[:, :, 0]))
 
     Xs = X  # solution
 
     return Xs, convergence, i
 
 
-###############################################################################
+########################################################################################

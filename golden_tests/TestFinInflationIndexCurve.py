@@ -1,46 +1,45 @@
-###############################################################################
 # Copyright (C) 2018, 2019, 2020 Dominic O'Kane
-###############################################################################
 
-import sys
-sys.path.append("..")
+import add_fp_to_path
 
 from financepy.utils.date import Date
 from financepy.products.inflation.FinInflationIndexCurve import FinInflationIndexCurve
-from FinTestCases import FinTestCases, globalTestCaseMode
 
-test_cases = FinTestCases(__file__, globalTestCaseMode)
+from FinTestCases import FinTestCases, global_test_case_mode
 
-##############################################################################
+test_cases = FinTestCases(__file__, global_test_case_mode)
+
+########################################################################################
 
 
-def test_FinInflationIndexCurve():
+def test_fin_inflation_index_curve():
 
     # Create a curve from times and discount factors
-    indexDates = [Date(15, 1, 2008), Date(1, 4, 2008), Date(1, 5, 2008)]
-    indexValues = [209.49645, 214.823, 216.632]
+    index_dates = [Date(15, 1, 2008), Date(1, 4, 2008), Date(1, 5, 2008)]
+    index_values = [209.49645, 214.823, 216.632]
     lag = 3  # months
 
-    curve = FinInflationIndexCurve(indexDates, indexValues, lag)
+    curve = FinInflationIndexCurve(index_dates, index_values, lag)
 
-    refDate = Date(22, 7, 2008)
+    ref_date = Date(22, 7, 2008)
 
     test_cases.header("LABEL", "VALUE")
 
-    value = curve.index_value(refDate)
-    value = curve.index_value(refDate)
-    value = curve.index_value(refDate)
-    value = curve.index_value(refDate)
+    value = curve.index_value(ref_date)
+    value = curve.index_value(ref_date)
+    value = curve.index_value(ref_date)
+    value = curve.index_value(ref_date)
 
-    test_cases.print(refDate, value)
+    test_cases.print(ref_date, value)
 
-    index_ratio = curve.index_ratio(refDate)
-    test_cases.print(refDate, index_ratio)
+    index_ratio = curve.index_ratio(ref_date)
+    test_cases.print(ref_date, index_ratio)
+
+
+########################################################################################
 
 #    print(curve)
 
-###############################################################################
 
-
-test_FinInflationIndexCurve()
-test_cases.compareTestCases()
+test_fin_inflation_index_curve()
+test_cases.compare_test_cases()

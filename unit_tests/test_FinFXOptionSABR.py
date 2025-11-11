@@ -1,13 +1,12 @@
-###############################################################################
 # Copyright (C) 2018, 2019, 2020 Dominic O'Kane
-###############################################################################
+
+import numpy as np
 
 from financepy.market.curves.discount_curve_flat import DiscountCurveFlat
 from financepy.models.black_scholes import BlackScholes
 from financepy.products.fx.fx_vanilla_option import FXVanillaOption
 from financepy.utils.global_types import OptionTypes
 from financepy.utils.date import Date
-import numpy as np
 
 
 # UNFINISHED
@@ -20,16 +19,16 @@ expiry_dt = Date(13, 2, 2019)
 # In BS the FX rate is the price in domestic of one unit of foreign
 # In case of EURUSD = 1.3 the domestic currency is USD and foreign is EUR
 # DOM = USD , FOR = EUR
-ccy1CCRate = 0.030  # EUR
-ccy2CCRate = 0.025  # USD
+ccy1_cc_rate = 0.030  # EUR
+ccy2_cc_rate = 0.025  # USD
 
 strike_fx_rate = 1.250
 volatility = 0.10
 
 notional = 1000000.0
 
-domestic_curve = DiscountCurveFlat(value_dt, ccy2CCRate)
-foreign_curve = DiscountCurveFlat(value_dt, ccy1CCRate)
+domestic_curve = DiscountCurveFlat(value_dt, ccy2_cc_rate)
+foreign_curve = DiscountCurveFlat(value_dt, ccy1_cc_rate)
 
 model = BlackScholes(volatility)
 
@@ -39,8 +38,11 @@ notional = 1000000.0
 
 spot_fx_rates = np.arange(50, 200, 10) / 100.0
 
+########################################################################################
+
 
 def test_european_call():
+
     spot_fx_rate = 1.20
 
     call_option = FXVanillaOption(
@@ -74,7 +76,11 @@ def test_european_call():
     assert round(value_european, 4) == 0.5277
 
 
+########################################################################################
+
+
 def test_american_call():
+
     spot_fx_rate = 1.20
 
     call_option = FXVanillaOption(
@@ -108,7 +114,11 @@ def test_american_call():
     assert round(value_american, 4) == 0.5500
 
 
+########################################################################################
+
+
 def test_european_put():
+
     spot_fx_rate = 1.20
 
     call_option = FXVanillaOption(
@@ -142,7 +152,11 @@ def test_european_put():
     assert round(value_european, 4) == 0.0000
 
 
+########################################################################################
+
+
 def test_american_put():
+
     spot_fx_rate = 1.20
 
     call_option = FXVanillaOption(

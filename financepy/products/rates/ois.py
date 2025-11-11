@@ -2,6 +2,9 @@
 # Copyright (C) 2018, 2019, 2020 Dominic O'Kane
 ##############################################################################
 
+from typing import Union
+from enum import Enum
+
 import numpy as np
 
 from ...utils.error import FinError
@@ -18,9 +21,7 @@ from ...market.curves.discount_curve import DiscountCurve
 from .swap_fixed_leg import SwapFixedLeg
 from .swap_float_leg import SwapFloatLeg
 
-###############################################################################
-
-from enum import Enum
+########################################################################################
 
 
 class FinCompoundingTypes(Enum):
@@ -30,7 +31,7 @@ class FinCompoundingTypes(Enum):
     AVERAGED_DAILY = 4
 
 
-###############################################################################
+########################################################################################
 
 
 class OIS:
@@ -65,7 +66,7 @@ class OIS:
     def __init__(
         self,
         effective_dt: Date,  # Date interest starts to accrue
-        term_dt_or_tenor: (Date, str),  # Date contract ends
+        term_dt_or_tenor: Union[Date, str],  # Date contract ends
         fixed_leg_type: SwapTypes,
         fixed_cpn: float,  # Fixed cpn (annualised)
         fixed_freq_type: FrequencyTypes,
@@ -140,6 +141,8 @@ class OIS:
         )
 
     ###########################################################################
+
+    ##########################################################################
 
     def value(
         self, value_dt: Date, ois_curve: DiscountCurve, first_fixing_rate=None
@@ -216,9 +219,9 @@ class OIS:
 
     def __repr__(self):
         s = label_to_string("OBJECT TYPE", type(self).__name__)
-        s += self.fixed_leg.repr__()
+        s += self.fixed_leg.__repr__()
         s += "\n"
-        s += self.float_leg.repr__()
+        s += self.float_leg.__repr__()
         return s
 
     ###########################################################################
@@ -229,4 +232,4 @@ class OIS:
         print(self)
 
 
-###############################################################################
+########################################################################################

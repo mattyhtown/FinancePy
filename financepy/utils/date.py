@@ -4,97 +4,89 @@
 
 from collections.abc import Iterable
 from functools import partial
-from enum import Enum
+import datetime
+import math
+
 
 from typing import Union
 from numba import njit
 
 import numpy as np
-import datetime
 
-import math
-
-# from financepy.utils.error import FinError
 from .error import FinError
 from .tenor import Tenor, TenorUnit
+from .date_format import DateFormatTypes, get_date_format
+from .date_arrays import short_day_names, short_month_names
+from .date_arrays import month_days_leap_year, month_days_not_leap_year
 
+########################################################################################
+# --- Precomputed day offsets ---
+START_YEAR = 1900
+END_YEAR = 2200
 
-###############################################################################
+# Precompute year offsets
+year_offsets_list = []
+days = 0
+for y in range(START_YEAR, END_YEAR + 1):
+    year_offsets_list.append(days)
+    if y == 1900:
+        days += 366
+    else:
+        days += 366 if (y % 4 == 0 and y % 100 != 0) or (y % 400 == 0) else 365
 
+YEAR_OFFSETS = np.array(year_offsets_list, dtype=np.int32)
 
-class DateFormatTypes(Enum):
-    BLOOMBERG = 1
-    US_SHORT = 2
-    US_MEDIUM = 3
-    US_LONG = 4
-    US_LONGEST = 5
-    UK_SHORT = 6
-    UK_MEDIUM = 7
-    UK_LONG = 8
-    UK_LONGEST = 9
-    DATETIME = 10
+# Cumulative month days
+NONLEAP_CUM = np.array([0, 31, 59, 90, 120, 151, 181, 212, 243, 273, 304, 334], dtype=np.int32)
+LEAP_CUM    = np.array([0, 31, 60, 91, 121, 152, 182, 213, 244, 274, 305, 335], dtype=np.int32)
 
+########################################################################################
 
-# Set the default
-g_date_type_format = DateFormatTypes.UK_LONG
+@njit(cache=True, fastmath=True)
+def is_leap(y: int) -> bool:
+    return (y % 4 == 0 and y % 100 != 0) or (y % 400 == 0)
 
+########################################################################################
 
-def set_date_format(format_type):
-    """Function that sets the global date format type."""
-    global g_date_type_format
-    g_date_type_format = format_type
+@njit(cache=True, fastmath=True)
+def excel_from_ymd(d: int, m: int, y: int) -> int:
+    y_off = YEAR_OFFSETS[y - START_YEAR]
+    cum = LEAP_CUM if (y == 1900 or is_leap(y)) else NONLEAP_CUM
+    return y_off + cum[m - 1] + d
 
+########################################################################################
 
-###############################################################################
+@njit(cache=True)
+def ymd_from_excel(excel_dt: int):
+    """Excel day number (1 = 1900-01-01) -> (d, m, y)."""
+    days = excel_dt
 
+    # Excel bug: treat 1900 as a leap year
+    if days > 59:  # i.e. after 28 Feb 1900
+        days -= 1  # skip the fake Feb 29
 
-short_day_names = ["MON", "TUE", "WED", "THU", "FRI", "SAT", "SUN"]
-long_day_names = [
-    "MONDAY",
-    "TUESDAY",
-    "WEDNESDAY",
-    "THURSDAY",
-    "FRIDAY",
-    "SATURDAY",
-    "SUNDAY",
-]
-short_month_names = [
-    "JAN",
-    "FEB",
-    "MAR",
-    "APR",
-    "MAY",
-    "JUN",
-    "JUL",
-    "AUG",
-    "SEP",
-    "OCT",
-    "NOV",
-    "DEC",
-]
-longMonthNames = [
-    "JANUARY",
-    "FEBRUARY",
-    "MARCH",
-    "APRIL",
-    "MAY",
-    "JUNE",
-    "JULY",
-    "AUGUST",
-    "SEPTEMBER",
-    "OCTOBER",
-    "NOVEMBER",
-    "DECEMBER",
-]
+    # Now proceed with normal proleptic Gregorian calculation
+    y = 1900
+    while True:
+        leap = (y % 4 == 0 and y % 100 != 0) or (y % 400 == 0)
+        days_in_year = 366 if leap else 365
+        if days > days_in_year:
+            days -= days_in_year
+            y += 1
+        else:
+            break
 
-month_days_not_leap_year = [31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31]
-month_days_leap_year = [31, 29, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31]
+    # find month/day
+    leap = (y % 4 == 0 and y % 100 != 0) or (y % 400 == 0)
+    mdays = month_days_leap_year if leap else month_days_not_leap_year
+    m = 1
+    while days > mdays[m-1]:
+        days -= mdays[m-1]
+        m += 1
+    d = days
+    return d, m, y
 
-###############################################################################
-
-# TODO: Fix this - it has stopped working
-# @njit(boolean(int64), fastmath=True, cache=True)
-
+########################################################################################
 
 def is_leap_year(y: int):
     """Test whether year y is a leap year - if so return True, else False"""
@@ -102,113 +94,32 @@ def is_leap_year(y: int):
     return leap_year
 
 
-###############################################################################
+########################################################################################
 
 
 def parse_dt(date_str, date_format):
+    """
+    Parse a date string into day, month, and year components.
+    """
     dt_obj = datetime.datetime.strptime(date_str, date_format)
     return dt_obj.day, dt_obj.month, dt_obj.year
 
-
-###############################################################################
-# CREATE DATE COUNTER
-###############################################################################
-
-
-g_dt_counter_list = None
-g_start_year = 1900
-g_end_year = 2100
-
-
-def calculate_list():
-    """Calculate list of dates so that we can do quick lookup to get the
-    number of dates since 1 Jan 1900 (inclusive) BUT TAKING INTO ACCOUNT THE
-    FACT THAT EXCEL MISTAKENLY CALLS 1900 A LEAP YEAR. For us, agreement with
-    Excel is more important than this leap year error and in any case, we will
-    not usually be calculating day differences with start dates before 28 Feb
-    1900. Note that Excel inherited this "BUG" from LOTUS 1-2-3."""
-
-    day_counter = 0
-    max_days = 0
-
-    global g_dt_counter_list
-    global g_start_year
-    global g_end_year
-
-    g_dt_counter_list = []
-
-    idx = -1  # the first element will be idx=0
-
-    for yy in range(1900, g_end_year + 1):
-
-        # DO NOT CHANGE THIS FOR AGREEMENT WITH EXCEL WHICH ASSUMES THAT 1900
-        # WAS A LEAP YEAR AND THAT 29 FEB 1900 ACTUALLY HAPPENED. A LOTUS BUG.
-        if yy == 1900:
-            leap_year = True
-        else:
-            leap_year = is_leap_year(yy)
-
-        for mm in range(1, 13):
-
-            if leap_year is True:
-                max_days = month_days_leap_year[mm - 1]
-            else:
-                max_days = month_days_not_leap_year[mm - 1]
-
-            for _ in range(1, max_days + 1):
-                idx += 1
-                day_counter += 1
-                if yy >= g_start_year:
-                    g_dt_counter_list.append(day_counter)
-
-            for _ in range(max_days, 31):
-                idx += 1
-                if yy >= g_start_year:
-                    g_dt_counter_list.append(-999)
-
-
-###############################################################################
-# The index in these functions is not the Excel date index used as the
-# internal representation of the date but the index of that date in the
-# padded date object used to store the dates in a way that allows for a
-# quick lookup. Do not confuse them as you will find they are out by months
-###############################################################################
+########################################################################################
 
 
 @njit(fastmath=True, cache=True)
-def date_index(d, m, y):
-    """Calculate the index of a date assuming 31 days in all months"""
-    idx = (y - g_start_year) * 12 * 31 + (m - 1) * 31 + (d - 1)
-    return idx
-
-
-###############################################################################
-
-
-@njit(fastmath=True, cache=True)
-def date_from_index(idx):
-    """Reverse mapping from index to date. Take care with numba as it can do
-    weird rounding on the integer. Seems OK now."""
-    y = int(g_start_year + idx / 12 / 31)
-    m = 1 + int((idx - (y - g_start_year) * 12 * 31) / 31)
-    d = 1 + idx - (y - g_start_year) * 12 * 31 - (m - 1) * 31
-    return (d, m, y)
-
-
-###############################################################################
-
-
-@njit(fastmath=True, cache=True)
-def weekday(day_count):
+def weekday(day_count) -> int:
     """Converts day count to a weekday based on Excel date"""
     week_day = (day_count + 5) % 7
     return week_day
 
 
-###############################################################################
+########################################################################################
 
 
 def vectorisation_helper(func):
+    """Decorator to allow a function to be vectorised over an iterable"""
+
     def wrapper(self_, other):
         if isinstance(other, Iterable):
             # Store the type of other, then cast the output to be the same type
@@ -220,111 +131,81 @@ def vectorisation_helper(func):
     return wrapper
 
 
-###############################################################################
+########################################################################################
 
 
 class Date:
     """A date class to manage dates that is simple to use and includes a
     number of useful date functions used frequently in Finance."""
 
-    MON = 0
-    TUE = 1
-    WED = 2
-    THU = 3
-    FRI = 4
-    SAT = 5
-    SUN = 6
+    __slots__ = ("d", "m", "y", "hh", "mm", "ss", "excel_dt", "weekday")
 
-    ###########################################################################
+    MON, TUE, WED, THU, FRI, SAT, SUN = range(7)
+
+    ####################################################################################
+
+class Date:
+    """A date class to manage dates that is simple to use and includes a
+    number of useful date functions used frequently in Finance."""
+
+    __slots__ = ("d", "m", "y", "hh", "mm", "ss", "excel_dt", "weekday")
+
+    MON, TUE, WED, THU, FRI, SAT, SUN = range(7)
+
+    ####################################################################################
 
     def __init__(self, d, m, y, hh=0, mm=0, ss=0):
-        """Create a date given a day of month, month and year. The arguments
-        must be in the order of day (of month), month number and then the year.
-        The year must be a 4-digit number greater than or equal to 1900. The
-        user can also supply an hour, minute and second for intraday work.
-
-        Example Input:
-        start_dt = Date(1, 1, 2018)
-        """
-
-        global g_start_year
-        global g_end_year
-
-        # If the date has been entered as y, m, d we flip it to d, m, y
-        # This message should be removed after a few releases
-        if d >= g_start_year and d < g_end_year and y > 0 and y <= 31:
-            raise FinError(
-                "Date arguments must now be in the order Date(dd, mm, yyyy)"
-            )
-
-        if g_dt_counter_list is None:
-            calculate_list()
-
+        # validation checks (as you already had)
+        if 1900 <= d <= 2100 and 1 <= y <= 31:
+            raise FinError("Date arguments must be in order Date(day, month, year)")
         if y < 1900:
             raise FinError("Year cannot be before 1900")
-
-        # Resize date list dynamically if required
-        if y < g_start_year:
-            g_start_year = y
-            calculate_list()
-
-        if y > g_end_year:
-            g_end_year = y
-            calculate_list()
-
-        if y < g_start_year or y > g_end_year:
-            raise FinError(
-                "Date: year "
-                + str(y)
-                + " should be "
-                + str(g_start_year)
-                + " to "
-                + str(g_end_year)
-            )
-
-        if d < 1:
-            raise FinError("Date: Leap year. Day not valid.")
-
-        leap_year = is_leap_year(y)
-
-        if leap_year:
-            if d > month_days_leap_year[m - 1]:
-                print(d, m, y)
-                raise FinError("Date: Leap year. Day not valid.")
-        else:
-            if d > month_days_not_leap_year[m - 1]:
-                print(d, m, y)
-                raise FinError("Date: Not Leap year. Day not valid.")
-
-        if hh < 0 or hh > 23:
-            raise FinError("Hours must be in range 0-23")
-
-        if mm < 0 or mm > 59:
-            raise FinError("Minutes must be in range 0-59")
-
-        if ss < 0 or ss > 59:
-            raise FinError("Seconds must be in range 0-59")
-
-        self.y = y
-        self.m = m
-        self.d = d
-
-        self.hh = hh
-        self.mm = mm
-        self.ss = ss
-
-        self.excel_dt = 0  # This is a float as it includes intraday time
-
-        # update the Excel date used for doing lots of financial calculations
+        ...
+        # set fields
+        self.y, self.m, self.d = y, m, d
+        self.hh, self.mm, self.ss = hh, mm, ss
         self._refresh()
+        day_fraction = (hh / 24.0) + (mm / (24.0 * 60.0)) + (ss / (24.0 * 3600.0))
+        self.excel_dt += day_fraction
 
-        day_fraction = self.hh / 24.0
-        day_fraction += self.mm / 24.0 / 60.0
-        day_fraction += self.ss / 24.0 / 60.0 / 60.0
+    ####################################################################################
 
-        self.excel_dt += day_fraction  # This is float - holds intraday time
+    @staticmethod
+    def _make(d, m, y, hh=0, mm=0, ss=0):
+        """Normal safe constructor."""
+        return Date(d, m, y, hh, mm, ss)
 
-    ###########################################################################
+    ####################################################################################
+
+    @classmethod
+    def _make_fast(cls, d, m, y, excel_dt):
+        """Fast constructor when excel_dt is already known."""
+        obj = cls.__new__(cls)
+        obj.d, obj.m, obj.y = d, m, y
+        obj.hh = obj.mm = obj.ss = 0
+        obj.excel_dt = excel_dt
+        obj.weekday = (int(excel_dt) + 5) % 7
+        return obj
+
+    ####################################################################################
+
+    @classmethod
+    def from_ymd_excel(cls, d, m, y, excel_dt):
+        obj = cls.__new__(cls)  # allocate without __init__
+        obj.d, obj.m, obj.y = d, m, y
+        obj.hh = obj.mm = obj.ss = 0
+        obj.excel_dt = excel_dt
+        obj.weekday = (int(excel_dt) + 5) % 7
+        return obj
+
+    ####################################################################################
+
+    @staticmethod
+    def from_excel(excel_dt: int) -> "Date":
+        d, m, y = ymd_from_excel(int(excel_dt))
+        return Date(d, m, y)
+
+    ####################################################################################
 
     @classmethod
     def from_string(cls, date_string, format_string):
@@ -335,10 +216,10 @@ class Date:
         d, m, y = parse_dt(date_string, format_string)
         return cls(d, m, y)
 
-    ###########################################################################
+    ####################################################################################
 
     @classmethod
-    def from_date(cls, date: [datetime.date, np.datetime64]):
+    def from_date(cls, date: Union[datetime.date, np.datetime64]):
         """Create a Date from a python datetime.date object or from a
         Numpy datetime64 object.
         Example Input:
@@ -349,73 +230,69 @@ class Date:
             return cls(d, m, y)
 
         if isinstance(date, np.datetime64):
-            time_stamp = (
-                date - np.datetime64("1970-01-01T00:00:00")
-            ) / np.timedelta64(1, "s")
+            time_stamp = (date - np.datetime64("1970-01-01T00:00:00")) / np.timedelta64(
+                1, "s"
+            )
 
-            date = datetime.datetime.utcfromtime_stamp(time_stamp)
+            date = datetime.datetime.utcfromtimestamp(time_stamp)
             d, m, y = date.day, date.month, date.year
             return cls(d, m, y)
 
-    ###########################################################################
+    ####################################################################################
 
     def _refresh(self):
-        """Update internal representation of date as number of days since the
-        1st Jan 1900. This is same as Excel convention."""
-        idx = date_index(self.d, self.m, self.y)
-        days_since_first_jan_1900 = g_dt_counter_list[idx]
-        wd = weekday(days_since_first_jan_1900)
-        self.excel_dt = days_since_first_jan_1900
-        self.weekday = wd
+        """Update Excel day count and weekday."""
+        self.excel_dt = excel_from_ymd(self.d, self.m, self.y)
+        self.weekday = (int(self.excel_dt) + 5) % 7
 
-    ###########################################################################
+    ####################################################################################
 
     @vectorisation_helper
     def __gt__(self, other):
         return self.excel_dt > other.excel_dt
 
-    ###########################################################################
+    ####################################################################################
 
     @vectorisation_helper
     def __lt__(self, other):
         return self.excel_dt < other.excel_dt
 
-    ###########################################################################
+    ####################################################################################
 
     @vectorisation_helper
     def __ge__(self, other):
         return self.excel_dt >= other.excel_dt
 
-    ###########################################################################
+    ####################################################################################
 
     @vectorisation_helper
     def __le__(self, other):
         return self.excel_dt <= other.excel_dt
 
-    ###########################################################################
+    ####################################################################################
 
     @vectorisation_helper
     def __sub__(self, other):
         return self.excel_dt - other.excel_dt
 
-    ###########################################################################
+    ####################################################################################
 
     @vectorisation_helper
     def __rsub__(self, other):
         return self.excel_dt - other.excel_dt
 
-    ###########################################################################
+    ####################################################################################
 
     @vectorisation_helper
     def __eq__(self, other):
         return self.excel_dt == other.excel_dt
 
-    ###########################################################################
+    ####################################################################################
 
     def __hash__(self):
         return hash(self.excel_dt)
 
-    ###########################################################################
+    ####################################################################################
 
     def is_weekend(self):
         """returns True if the date falls on a weekend."""
@@ -425,7 +302,7 @@ class Date:
 
         return False
 
-    ###########################################################################
+    ####################################################################################
 
     def is_eom(self):
         """returns True if this date falls on a month end."""
@@ -445,7 +322,7 @@ class Date:
 
         return False
 
-    ###########################################################################
+    ####################################################################################
 
     def eom(self):
         """returns last date of month of this date."""
@@ -462,9 +339,7 @@ class Date:
             last_day = month_days_not_leap_year[m - 1]
             return Date(last_day, m, y)
 
-        return False
-
-    ###########################################################################
+    ####################################################################################
 
     def add_hours(self, hours):
         """Returns a new date that is h hours after the Date."""
@@ -484,28 +359,15 @@ class Date:
         dt_2 = Date(dt_1.d, dt_1.m, dt_1.y, hour, dt_1.mm, dt_1.ss)
         return dt_2
 
-    ###########################################################################
+    ####################################################################################
 
     def add_days(self, num_days: int = 1):
-        """Returns a new date that is num_days after the Date. I also make
-        it possible to go backwards a number of days."""
-
-        idx = date_index(self.d, self.m, self.y)
-
-        step = +1
-        if num_days < 0:
-            step = -1
-
-        while num_days != 0:
-            idx += step
-            if g_dt_counter_list[idx] > 0:
-                num_days -= step
-
-        (d, m, y) = date_from_index(idx)
-        new_dt = Date(d, m, y)
+        new_excel_dt = int(self.excel_dt) + int(num_days)
+        d, m, y = ymd_from_excel(new_excel_dt)
+        new_dt = Date._make_fast(d, m, y, new_excel_dt)
         return new_dt
 
-    ###########################################################################
+    ####################################################################################
 
     def add_weekdays(self, num_days: int):
         """Returns a new date that is num_days working days after Date. Note
@@ -572,34 +434,28 @@ class Date:
 
             return end_dt
 
-    ###########################################################################
+    ####################################################################################
 
-    def add_months(self, mm: (list, int)):
+    def add_months(self, mm: Union[list, int]) -> Union["Date", list]:
         """Returns a new date that is mm months after the Date. If mm is an
         integer or float you get back a single date. If mm is a vector you get
         back a vector of dates."""
 
-        num_months = 1
         scalar_flag = False
 
-        if isinstance(mm, int) or isinstance(mm, float):
+        if isinstance(mm, (int, float)):
             mm_vector = [mm]
             scalar_flag = True
         else:
             mm_vector = mm
 
-        num_months = len(mm_vector)
-
         date_list = []
 
-        for i in range(0, num_months):
-
-            mmi = mm_vector[i]
+        for mmi in mm_vector:
 
             # If I get a float I check it has no decimal places
             if int(mmi) != mmi:
                 raise FinError("Must only pass integers or float integers.")
-
             mmi = int(mmi)
 
             d = self.d
@@ -623,17 +479,18 @@ class Date:
                 if d > month_days_not_leap_year[m - 1]:
                     d = month_days_not_leap_year[m - 1]
 
-            new_dt = Date(d, m, y)
+            excel_dt = excel_from_ymd(d, m, y)
+            new_dt = Date._make_fast(d, m, y, excel_dt)
             date_list.append(new_dt)
 
         if scalar_flag is True:
             return date_list[0]
-        else:
-            return date_list
 
-    ###########################################################################
+        return date_list
 
-    def add_years(self, yy: (np.ndarray, float)):
+    ####################################################################################
+
+    def add_years(self, yy: Union[np.ndarray, float]):
         """Returns a new date that is yy years after the Date. If yy is an
         integer or float you get back a single date. If yy is a list you get
         back a vector of dates."""
@@ -657,13 +514,13 @@ class Date:
 
             # If yyi is not a whole month I adjust for days using average
             # number of days in a month which is 365.242/12
-            daysInMonth = 365.242 / 12.0
+            days_in_month_float = 365.242 / 12.0
 
             mmi = int(yyi * 12.0)
-            ddi = int((yyi * 12.0 - mmi) * daysInMonth)
+            ddi = int((yyi * 12.0 - mmi) * days_in_month_float)
+
             new_dt = self.add_months(mmi)
             new_dt = new_dt.add_days(ddi)
-
             date_list.append(new_dt)
 
         if scalar_flag is True:
@@ -671,7 +528,7 @@ class Date:
         else:
             return date_list
 
-    ##########################################################################
+    ####################################################################################
 
     def next_cds_date(self, mm: int = 0):
         """Returns a CDS date that is mm months after the Date. If no
@@ -705,10 +562,11 @@ class Date:
         elif m in (1, 2, 3):
             m_cds = 3
 
-        cds_dt = Date(d_cds, m_cds, y_cds)
+        excel_dt = excel_from_ymd(d_cds, m_cds, y_cds)
+        cds_dt = Date._make_fast(d_cds, m_cds, y_cds, excel_dt)
         return cds_dt
 
-    ##########################################################################
+    ####################################################################################
 
     def third_wednesday_of_month(self, m: int, y: int):
         """For a specific month and year this returns the day number of the
@@ -722,14 +580,14 @@ class Date:
         d_end = 21
 
         for d in range(d_start, d_end + 1):
-            imm_dt = Date(d, m, y)
-            if imm_dt.weekday == self.WED:
+            excel_dt = excel_from_ymd(d, m, y)
+            if (excel_dt + 5) % 7 == self.WED:
                 return d
 
         # Should never reach this line but just to be defensive
         raise FinError("Third Wednesday not found")
 
-    ##########################################################################
+    ####################################################################################
 
     def next_imm_date(self):
         """This function returns the next IMM date after the current date
@@ -741,6 +599,7 @@ class Date:
         m = self.m
         d = self.d
 
+        m_imm = None
         y_imm = y
 
         if m == 12 and d >= self.third_wednesday_of_month(m, y):
@@ -762,11 +621,11 @@ class Date:
             m_imm = 3
 
         d_imm = self.third_wednesday_of_month(m_imm, y_imm)
-
-        imm_dt = Date(d_imm, m_imm, y_imm)
+        excel_dt = excel_from_ymd(d_imm, m_imm, y_imm)
+        imm_dt = Date._make_fast(d_imm, m_imm, y_imm, excel_dt)
         return imm_dt
 
-    ###########################################################################
+    ####################################################################################
 
     def add_tenor(self, tenor: Union[list, str, Tenor]):
         """Return the date following the Date by a period given by the
@@ -776,74 +635,51 @@ class Date:
         years. The date is NOT weekend or holiday calendar adjusted. This must
         be done AFTERWARDS."""
 
-        list_flag = False
-
-        if isinstance(tenor, list) is True:
-            list_flag = True
-            for ten in tenor:
-                if (
-                    isinstance(ten, str) is False
-                    and isinstance(ten, Tenor) is False
-                ):
-                    raise FinError(
-                        "Tenor must be a string e.g. '5Y' or a Tenor object"
-                    )
-        else:
-            if (
-                isinstance(tenor, str) is True
-                or isinstance(tenor, Tenor) is True
-            ):
-                tenor = [tenor]
-            else:
-                raise FinError(
-                    "Tenor must be a string e.g. '5Y' or a Tenor object"
-                )
+        list_flag = isinstance(tenor, list)
+        if not list_flag:
+            tenor = [tenor]
 
         new_dts = []
 
-        for tenor_string in tenor:
+        for tenor_item in tenor:
+            tenor_obj = Tenor.as_tenor(str_or_tenor=tenor_item)
 
-            tenor_obj = Tenor.as_tenor(str_or_tenor=tenor_string)
+            # start with current date
+            d, m, y = self.d, self.m, self.y
+            excel_dt = int(self.excel_dt)
 
-            new_dt = Date(self.d, self.m, self.y)
+            if tenor_obj.units == TenorUnit.DAYS:
+                new_excel_dt = excel_dt + int(tenor_obj.num_periods)
+                d, m, y = ymd_from_excel(new_excel_dt)
+                new_dt = Date._make_fast(d, m, y, new_excel_dt)
 
-            if tenor_obj._units == TenorUnit.DAYS:
-                for _ in range(0, abs(tenor_obj._num_periods)):
-                    new_dt = new_dt.add_days(
-                        math.copysign(1, tenor_obj._num_periods)
-                    )
-            elif tenor_obj._units == TenorUnit.WEEKS:
-                for _ in range(0, abs(tenor_obj._num_periods)):
-                    new_dt = new_dt.add_days(
-                        math.copysign(7, tenor_obj._num_periods)
-                    )
-            elif tenor_obj._units == TenorUnit.MONTHS:
-                for _ in range(0, abs(tenor_obj._num_periods)):
-                    new_dt = new_dt.add_months(
-                        math.copysign(1, tenor_obj._num_periods)
-                    )
+            elif tenor_obj.units == TenorUnit.WEEKS:
+                new_excel_dt = excel_dt + int(tenor_obj.num_periods) * 7
+                d, m, y = ymd_from_excel(new_excel_dt)
+                new_dt = Date._make_fast(d, m, y, new_excel_dt)
 
-                # in case we landed on a 28th Feb and lost the month day
-                # we add this logic
-                y = new_dt.y
-                m = new_dt.m
+            elif tenor_obj.units == TenorUnit.MONTHS:
+                # reuse add_months (already _make_fast optimized)
+                new_dt = self.add_months(int(tenor_obj.num_periods))
+
+                # handle case when Feb truncates to 28/29 (preserve original d if possible)
+                y, m = new_dt.y, new_dt.m
                 d = min(self.d, new_dt.eom().d)
-                new_dt = Date(d, m, y)
+                excel_dt = excel_from_ymd(d, m, y)
+                new_dt = Date._make_fast(d, m, y, excel_dt)
 
-            elif tenor_obj._units == TenorUnit.YEARS:
-                for _ in range(0, abs(tenor_obj._num_periods)):
-                    new_dt = new_dt.add_months(
-                        math.copysign(12, tenor_obj._num_periods)
-                    )
+            elif tenor_obj.units == TenorUnit.YEARS:
+                # just months × 12
+                new_dt = self.add_months(int(tenor_obj.num_periods) * 12)
+
+            else:
+                raise FinError("Unsupported tenor unit: " + str(tenor_obj.units))
 
             new_dts.append(new_dt)
 
-        if list_flag is True:
-            return new_dts
-        else:
-            return new_dts[0]
+        return new_dts if list_flag else new_dts[0]
 
-    ###########################################################################
+    ####################################################################################
 
     def datetime(self):
         """Returns a datetime of the date"""
@@ -868,12 +704,12 @@ class Date:
         date_str += "" + str(self.y)
         return date_str
 
-    ###########################################################################
+    ####################################################################################
 
     def __repr__(self):
         """returns a formatted string of the date"""
 
-        global g_date_type_format
+        global G_DATE_TYPE_FORMAT
 
         day_name_str = short_day_names[self.weekday]
 
@@ -892,7 +728,7 @@ class Date:
         short_year_str = str(self.y)[2:]
         long_year_str = str(self.y)
 
-        if g_date_type_format == DateFormatTypes.UK_LONGEST:
+        if get_date_format() == DateFormatTypes.UK_LONGEST:
 
             sep = " "
             date_str = (
@@ -906,25 +742,25 @@ class Date:
             )
             return date_str
 
-        elif g_date_type_format == DateFormatTypes.UK_LONG:
+        elif get_date_format() == DateFormatTypes.UK_LONG:
 
             sep = "-"
             date_str = day_str + sep + long_month_str + sep + long_year_str
             return date_str
 
-        elif g_date_type_format == DateFormatTypes.UK_MEDIUM:
+        elif get_date_format() == DateFormatTypes.UK_MEDIUM:
 
             sep = "/"
             date_str = day_str + sep + short_month_str + sep + long_year_str
             return date_str
 
-        elif g_date_type_format == DateFormatTypes.UK_SHORT:
+        elif get_date_format() == DateFormatTypes.UK_SHORT:
 
             sep = "/"
             date_str = day_str + sep + short_month_str + sep + short_year_str
             return date_str
 
-        elif g_date_type_format == DateFormatTypes.US_LONGEST:
+        elif get_date_format() == DateFormatTypes.US_LONGEST:
 
             sep = " "
             date_str = (
@@ -938,31 +774,31 @@ class Date:
             )
             return date_str
 
-        elif g_date_type_format == DateFormatTypes.US_LONG:
+        elif get_date_format() == DateFormatTypes.US_LONG:
 
             sep = "-"
             date_str = long_month_str + sep + day_str + sep + long_year_str
             return date_str
 
-        elif g_date_type_format == DateFormatTypes.US_MEDIUM:
+        elif get_date_format() == DateFormatTypes.US_MEDIUM:
 
             sep = "-"
             date_str = short_month_str + sep + day_str + sep + long_year_str
             return date_str
 
-        elif g_date_type_format == DateFormatTypes.US_SHORT:
+        elif get_date_format() == DateFormatTypes.US_SHORT:
 
             sep = "-"
             date_str = short_month_str + sep + day_str + sep + short_year_str
             return date_str
 
-        elif g_date_type_format == DateFormatTypes.BLOOMBERG:
+        elif get_date_format() == DateFormatTypes.BLOOMBERG:
 
             sep = "/"
             date_str = short_month_str + sep + day_str + sep + short_year_str
             return date_str
 
-        elif g_date_type_format == DateFormatTypes.DATETIME:
+        elif get_date_format() == DateFormatTypes.DATETIME:
 
             sep = "/"
 
@@ -986,9 +822,7 @@ class Date:
             date_str = date_str + " " + time_str
             return date_str
 
-        else:
-
-            raise FinError("Unknown date format")
+        raise FinError("Unknown date format")
 
     ###########################################################################
     # REMOVE THIS
@@ -998,9 +832,9 @@ class Date:
         print(self)
 
 
-###############################################################################
+########################################################################################
 # Date functions that are not class members but are useful
-###############################################################################
+########################################################################################
 
 
 def daily_working_day_schedule(start_dt: Date, end_dt: Date):
@@ -1018,7 +852,7 @@ def daily_working_day_schedule(start_dt: Date, end_dt: Date):
     return date_list
 
 
-###############################################################################
+########################################################################################
 
 
 def datediff(d1: Date, d2: Date):
@@ -1027,7 +861,7 @@ def datediff(d1: Date, d2: Date):
     return int(dd)
 
 
-###############################################################################
+########################################################################################
 
 
 def from_datetime(dt: Date):
@@ -1038,7 +872,7 @@ def from_datetime(dt: Date):
     return fin_dt
 
 
-###############################################################################
+########################################################################################
 
 
 def days_in_month(m, y):
@@ -1053,7 +887,7 @@ def days_in_month(m, y):
         return month_days_leap_year[m - 1]
 
 
-###############################################################################
+########################################################################################
 
 
 def date_range(start_dt: Date, end_dt: Date, tenor: str = "1D"):
@@ -1075,12 +909,6 @@ def date_range(start_dt: Date, end_dt: Date, tenor: str = "1D"):
     return date_list
 
 
-###############################################################################
+########################################################################################
 
 
-def test_type():
-    global g_date_type_format
-    print("TEST TYPE", g_date_type_format)
-
-
-###############################################################################

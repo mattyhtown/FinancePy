@@ -7,7 +7,7 @@ from typing import Union, Optional
 import numpy as np
 
 from ...utils.date import Date
-from ...utils.global_vars import g_days_in_year
+from ...utils.global_vars import G_DAYS_IN_YEARS
 from ...utils.error import FinError
 from ...utils.global_types import OptionTypes
 from ...utils.helpers import check_argument_types, label_to_string
@@ -25,7 +25,7 @@ class EquityIndexOption:
         self,
         expiry_dt: Union[Date, list],
         strike_price: Union[float, np.ndarray],
-        option_type: OptionTypes,
+        opt_type: OptionTypes,
         num_options: Optional[float] = 1.0,
     ):
         """Create the Equity Index option object by specifying the expiry
@@ -33,14 +33,14 @@ class EquityIndexOption:
 
         check_argument_types(self.__init__, locals())
 
-        if option_type in (
+        if opt_type in (
             OptionTypes.EUROPEAN_CALL,
             OptionTypes.EUROPEAN_PUT,
             OptionTypes.AMERICAN_CALL,
             OptionTypes.AMERICAN_PUT,
         ):
-            self.option_type = option_type
-            self.option_type_value = option_type.value
+            self.opt_type = opt_type
+            self.opt_type_value = opt_type.value
         else:
             raise FinError("Unknown Option Type")
         self.expiry_dt = expiry_dt
@@ -69,11 +69,11 @@ class EquityIndexOption:
             )
 
         if isinstance(self.expiry_dt, Date):
-            t_exp = (self.expiry_dt - value_dt) / g_days_in_year
+            t_exp = (self.expiry_dt - value_dt) / G_DAYS_IN_YEARS
         elif isinstance(self.expiry_dt, list):
             t_exp = []
             for exp_dt in self.expiry_dt:
-                t = (exp_dt - value_dt) / g_days_in_year
+                t = (exp_dt - value_dt) / G_DAYS_IN_YEARS
             t_exp.append(t)
             t_exp = np.array(t_exp)
         else:
@@ -94,7 +94,7 @@ class EquityIndexOption:
         k = self.strike_price
 
         if isinstance(model, Black):
-            value = model.value(forward_price, k, t_exp, df, self.option_type)
+            value = model.value(forward_price, k, t_exp, df, self.opt_type)
         else:
             raise FinError("Unknown Model Type")
 
@@ -113,7 +113,7 @@ class EquityIndexOption:
         """Calculate delta of a European/American Index option."""
 
         if isinstance(value_dt, Date):
-            t_exp = (self.expiry_dt - value_dt) / g_days_in_year
+            t_exp = (self.expiry_dt - value_dt) / G_DAYS_IN_YEARS
         else:
             t_exp = value_dt
         self.t_exp = t_exp
@@ -126,7 +126,7 @@ class EquityIndexOption:
         k = self.strike_price
         if isinstance(model, Black):
             delta = model.delta(
-                forward_price, k, t_exp, df, self.option_type_value
+                forward_price, k, t_exp, df, self.opt_type_value
             )
         else:
             raise FinError("Unknown Model Type")
@@ -144,7 +144,7 @@ class EquityIndexOption:
         """Calculate gamma of a European/American Index option."""
 
         if isinstance(value_dt, Date):
-            t_exp = (self.expiry_dt - value_dt) / g_days_in_year
+            t_exp = (self.expiry_dt - value_dt) / G_DAYS_IN_YEARS
         else:
             t_exp = value_dt
         if np.any(forward_price <= 0.0):
@@ -156,7 +156,7 @@ class EquityIndexOption:
         k = self.strike_price
         if isinstance(model, Black):
             gamma = model.gamma(
-                forward_price, k, t_exp, df, self.option_type_value
+                forward_price, k, t_exp, df, self.opt_type_value
             )
         else:
             raise FinError("Unknown Model Type")
@@ -174,7 +174,7 @@ class EquityIndexOption:
         """Calculate vega of a European/American Index option."""
 
         if isinstance(value_dt, Date):
-            t_exp = (self.expiry_dt - value_dt) / g_days_in_year
+            t_exp = (self.expiry_dt - value_dt) / G_DAYS_IN_YEARS
         else:
             t_exp = value_dt
         if np.any(forward_price <= 0.0):
@@ -185,9 +185,7 @@ class EquityIndexOption:
         df = discount_curve.df(self.expiry_dt) / discount_curve.df(value_dt)
         k = self.strike_price
         if isinstance(model, Black):
-            vega = model.vega(
-                forward_price, k, t_exp, df, self.option_type_value
-            )
+            vega = model.vega(forward_price, k, t_exp, df, self.opt_type_value)
         else:
             raise FinError("Unknown Model Type")
         return vega
@@ -204,7 +202,7 @@ class EquityIndexOption:
         """Calculate theta of a European/American Index option."""
 
         if isinstance(value_dt, Date):
-            t_exp = (self.expiry_dt - value_dt) / g_days_in_year
+            t_exp = (self.expiry_dt - value_dt) / G_DAYS_IN_YEARS
         else:
             t_exp = value_dt
         if np.any(forward_price <= 0.0):
@@ -216,7 +214,7 @@ class EquityIndexOption:
         k = self.strike_price
         if isinstance(model, Black):
             theta = model.theta(
-                forward_price, k, t_exp, df, self.option_type_value
+                forward_price, k, t_exp, df, self.opt_type_value
             )
         else:
             raise FinError("Unknown Model Type")
@@ -234,7 +232,7 @@ class EquityIndexOption:
     ):
         """Calculate the Black implied volatility of a European/American
         Index option."""
-        t_exp = (self.expiry_dt - value_dt) / g_days_in_year
+        t_exp = (self.expiry_dt - value_dt) / G_DAYS_IN_YEARS
         if t_exp < 1.0 / 365.0:
             print("Expiry time is too close to zero.")
             return -999
@@ -247,7 +245,7 @@ class EquityIndexOption:
                 r,
                 self.strike_price,
                 price,
-                self.option_type,
+                self.opt_type,
             )
         else:
             raise FinError("Unknown Model Type")
@@ -259,7 +257,7 @@ class EquityIndexOption:
         s = label_to_string("OBJECT TYPE", type(self).__name__)
         s += label_to_string("EXPIRY DATE", self.expiry_dt)
         s += label_to_string("STRIKE PRICE", self.strike_price)
-        s += label_to_string("OPTION TYPE VALUE", self.option_type)
+        s += label_to_string("OPTION TYPE VALUE", self.opt_type)
         s += label_to_string("NUMBER", self.num_options, "")
         return s
 
@@ -270,4 +268,4 @@ class EquityIndexOption:
         print(self)
 
 
-###############################################################################
+########################################################################################

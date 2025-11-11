@@ -1,70 +1,73 @@
-import pytest
 import pandas as pd
+import pytest
 
 from financepy.utils.global_types import SwapTypes
-from financepy.utils.math import ONE_MILLION
 from financepy.market.curves.interpolator import InterpTypes
 from financepy.products.rates.ibor_swap import IborSwap
 from financepy.products.rates.ibor_fra import IborFRA
 from financepy.products.rates.ibor_deposit import IborDeposit
-from financepy.products.rates.ibor_future import IborFuture
 from financepy.products.rates.ibor_single_curve import IborSingleCurve
 from financepy.products.rates.ibor_single_curve_smoothing_calibrator import (
     IborSingleCurveSmoothingCalibrator,
 )
 from financepy.utils.frequency import FrequencyTypes
+from financepy.utils.calendar import CalendarTypes
 from financepy.utils.day_count import DayCountTypes
 from financepy.utils.date import Date
-from financepy.utils.calendar import Calendar, CalendarTypes
+
+REPORT_PROGRESS = True
 
 
 @pytest.mark.parametrize("interp_type", InterpTypes)
-def test_SmoothFitSimple(interp_type, report_progress=False):
+
+########################################################################################
+
+
+def test_smooth_fit_simple(interp_type):
+
     valuation_date = Date(6, 10, 2001)
     cal = CalendarTypes.UNITED_KINGDOM
 
-    depoDCCType = DayCountTypes.ACT_360
+    depo_dcc_type = DayCountTypes.ACT_360
     depos = []
     spot_days = 2
     settlement_date = valuation_date.add_weekdays(spot_days)
-    depo = IborDeposit(
-        settlement_date, "3M", 4.2 / 100.0, depoDCCType, cal_type=cal
-    )
+    depo = IborDeposit(settlement_date, "3M", 4.2 / 100.0, depo_dcc_type, cal_type=cal)
     depos.append(depo)
 
-    fraDCCType = DayCountTypes.ACT_360
+    fra_dcc_type = DayCountTypes.ACT_360
     fras = []
     fra = IborFRA(
         settlement_date.add_tenor("3M"),
         "3M",
         4.20 / 100.0,
-        fraDCCType,
+        fra_dcc_type,
         cal_type=cal,
     )
     fras.append(fra)
 
     swaps = []
-    swapType = SwapTypes.PAY
-    fixedDCCType = DayCountTypes.THIRTY_E_360_ISDA
-    fixed_freqType = FrequencyTypes.SEMI_ANNUAL
+    swap_type = SwapTypes.PAY
+    fixed_dcc_type = DayCountTypes.THIRTY_E_360_ISDA
+    fixed_freq_type = FrequencyTypes.SEMI_ANNUAL
 
     swap = IborSwap(
         settlement_date,
         "1Y",
-        swapType,
+        swap_type,
         4.20 / 100.0,
-        fixed_freqType,
-        fixedDCCType,
+        fixed_freq_type,
+        fixed_dcc_type,
         cal_type=cal,
     )
     swaps.append(swap)
     swap = IborSwap(
         settlement_date,
         "2Y",
-        swapType,
+        swap_type,
         4.30 / 100.0,
-        fixed_freqType,
-        fixedDCCType,
+        fixed_freq_type,
+        fixed_dcc_type,
         cal_type=cal,
     )
     swaps.append(swap)
@@ -77,7 +80,7 @@ def test_SmoothFitSimple(interp_type, report_progress=False):
         fras,
         swaps,
         interp_type,
-        check_refit=False,
+        check_refit_flag=False,
         do_build=do_build,
     )
 
@@ -85,10 +88,10 @@ def test_SmoothFitSimple(interp_type, report_progress=False):
 
     smooth_param = 1.0
     curve, report = calibrator.fit(
-        smoothness=smooth_param, report_progress=report_progress
+        smoothness=smooth_param, report_progress=REPORT_PROGRESS
     )
 
-    if report_progress:
+    if REPORT_PROGRESS:
         with pd.option_context(
             "display.max_rows",
             None,
@@ -102,132 +105,135 @@ def test_SmoothFitSimple(interp_type, report_progress=False):
 
 
 @pytest.mark.parametrize("interp_type", [InterpTypes.FLAT_FWD_RATES])
-def test_SmoothFit(interp_type, report_progress=False):
+
+########################################################################################
+
+
+def test_smooth_fit(interp_type):
+
     valuation_date = Date(6, 10, 2001)
     cal = CalendarTypes.UNITED_KINGDOM
 
-    depoDCCType = DayCountTypes.ACT_360
+    depo_dcc_type = DayCountTypes.ACT_360
     depos = []
     spot_days = 2
     settlement_date = valuation_date.add_weekdays(spot_days)
-    depo = IborDeposit(
-        settlement_date, "3M", 4.2 / 100.0, depoDCCType, cal_type=cal
-    )
+    depo = IborDeposit(settlement_date, "3M", 4.2 / 100.0, depo_dcc_type, cal_type=cal)
     depos.append(depo)
 
-    fraDCCType = DayCountTypes.ACT_360
+    fra_dcc_type = DayCountTypes.ACT_360
     fras = []
     fra = IborFRA(
         settlement_date.add_tenor("3M"),
         "3M",
         4.20 / 100.0,
-        fraDCCType,
+        fra_dcc_type,
         cal_type=cal,
     )
     fras.append(fra)
 
     swaps = []
-    swapType = SwapTypes.PAY
-    fixedDCCType = DayCountTypes.THIRTY_E_360_ISDA
-    fixed_freqType = FrequencyTypes.SEMI_ANNUAL
+    swap_type = SwapTypes.PAY
+    fixed_dcc_type = DayCountTypes.THIRTY_E_360_ISDA
+    fixed_freq_type = FrequencyTypes.SEMI_ANNUAL
 
     swap = IborSwap(
         settlement_date,
         "1Y",
-        swapType,
+        swap_type,
         4.20 / 100.0,
-        fixed_freqType,
-        fixedDCCType,
+        fixed_freq_type,
+        fixed_dcc_type,
         cal_type=cal,
     )
     swaps.append(swap)
     swap = IborSwap(
         settlement_date,
         "2Y",
-        swapType,
+        swap_type,
         4.30 / 100.0,
-        fixed_freqType,
-        fixedDCCType,
+        fixed_freq_type,
+        fixed_dcc_type,
         cal_type=cal,
     )
     swaps.append(swap)
     swap = IborSwap(
         settlement_date,
         "3Y",
-        swapType,
+        swap_type,
         4.70 / 100.0,
-        fixed_freqType,
-        fixedDCCType,
+        fixed_freq_type,
+        fixed_dcc_type,
         cal_type=cal,
     )
     swaps.append(swap)
     swap = IborSwap(
         settlement_date,
         "5Y",
-        swapType,
+        swap_type,
         5.40 / 100.0,
-        fixed_freqType,
-        fixedDCCType,
+        fixed_freq_type,
+        fixed_dcc_type,
         cal_type=cal,
     )
     swaps.append(swap)
     swap = IborSwap(
         settlement_date,
         "7Y",
-        swapType,
+        swap_type,
         5.70 / 100.0,
-        fixed_freqType,
-        fixedDCCType,
+        fixed_freq_type,
+        fixed_dcc_type,
         cal_type=cal,
     )
     swaps.append(swap)
     swap = IborSwap(
         settlement_date,
         "10Y",
-        swapType,
+        swap_type,
         6.00 / 100.0,
-        fixed_freqType,
-        fixedDCCType,
+        fixed_freq_type,
+        fixed_dcc_type,
         cal_type=cal,
     )
     swaps.append(swap)
     swap = IborSwap(
         settlement_date,
         "12Y",
-        swapType,
+        swap_type,
         6.10 / 100.0,
-        fixed_freqType,
-        fixedDCCType,
+        fixed_freq_type,
+        fixed_dcc_type,
         cal_type=cal,
     )
     swaps.append(swap)
     swap = IborSwap(
         settlement_date,
         "15Y",
-        swapType,
+        swap_type,
         5.90 / 100.0,
-        fixed_freqType,
-        fixedDCCType,
+        fixed_freq_type,
+        fixed_dcc_type,
         cal_type=cal,
     )
     swaps.append(swap)
     swap = IborSwap(
         settlement_date,
         "20Y",
-        swapType,
+        swap_type,
         5.60 / 100.0,
-        fixed_freqType,
-        fixedDCCType,
+        fixed_freq_type,
+        fixed_dcc_type,
         cal_type=cal,
     )
     swaps.append(swap)
     swap = IborSwap(
         settlement_date,
         "25Y",
-        swapType,
+        swap_type,
         5.55 / 100.0,
-        fixed_freqType,
-        fixedDCCType,
+        fixed_freq_type,
+        fixed_dcc_type,
         cal_type=cal,
     )
     swaps.append(swap)
@@ -244,7 +250,7 @@ def test_SmoothFit(interp_type, report_progress=False):
         fras,
         swaps,
         interp_type,
-        check_refit=False,
+        check_refit_flag=False,
         do_build=do_build,
         **optional_interp_params,
     )
@@ -254,9 +260,9 @@ def test_SmoothFit(interp_type, report_progress=False):
     # here we go
     smooth_param = 1e-2
     curve, report = calibrator.fit(
-        smoothness=smooth_param, report_progress=report_progress
+        smoothness=smooth_param, report_progress=REPORT_PROGRESS
     )
-    if report_progress:
+    if REPORT_PROGRESS:
         with pd.option_context(
             "display.max_rows",
             None,
@@ -271,8 +277,9 @@ def test_SmoothFit(interp_type, report_progress=False):
     # If no exception, we are good
 
 
+########################################################################################
+
 if __name__ == "__main__":
-    report_progress = True
-    test_SmoothFitSimple(InterpTypes.LINEAR_ZERO_RATES, report_progress)
-    test_SmoothFit(InterpTypes.FLAT_FWD_RATES, report_progress)
-    # test_SmoothFit(InterpTypes.FINCUBIC_ZERO_RATES, report_progress)
+    test_smooth_fit_simple(InterpTypes.LINEAR_ZERO_RATES)
+    test_smooth_fit(InterpTypes.FLAT_FWD_RATES)
+    # test_smooth_fit(InterpTypes.FINCUBIC_ZERO_RATES)

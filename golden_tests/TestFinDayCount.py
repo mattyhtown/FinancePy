@@ -1,25 +1,23 @@
-###############################################################################
 # Copyright (C) 2018, 2019, 2020 Dominic O'Kane
-###############################################################################
 
-import sys
-sys.path.append("..")
+import add_fp_to_path
 
-from FinTestCases import FinTestCases, globalTestCaseMode
 from financepy.utils.frequency import FrequencyTypes
 from financepy.utils.day_count import DayCount, DayCountTypes
 from financepy.utils.date import Date
 
-test_cases = FinTestCases(__file__, globalTestCaseMode)
+from FinTestCases import FinTestCases, global_test_case_mode
 
-##############################################################################
+test_cases = FinTestCases(__file__, global_test_case_mode)
+
+########################################################################################
 
 
-def test_FinDayCount():
+def test_fin_day_count():
 
     test_cases.header("DAY_COUNT_METHOD", "START", "END", "ALPHA")
 
-    finFreq = FrequencyTypes.ANNUAL
+    fin_freq = FrequencyTypes.ANNUAL
 
     for day_count_method in DayCountTypes:
 
@@ -30,15 +28,12 @@ def test_FinDayCount():
 
         for _ in range(0, num_days):
             next_dt = next_dt.add_days(7)
-            dcf = day_count.year_frac(
-                start_dt, next_dt, next_dt, finFreq)
+            dcf = day_count.year_frac(start_dt, next_dt, next_dt, fin_freq)
 
-            test_cases.print(
-                str(day_count_method),
-                str(start_dt),
-                str(next_dt),
-                dcf[0])
+            test_cases.print(str(day_count_method), str(start_dt), str(next_dt), dcf[0])
 
 
-test_FinDayCount()
-test_cases.compareTestCases()
+########################################################################################
+
+test_fin_day_count()
+test_cases.compare_test_cases()

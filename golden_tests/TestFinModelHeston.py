@@ -1,25 +1,23 @@
-###############################################################################
 # Copyright (C) 2018, 2019, 2020 Dominic O'Kane
-###############################################################################
 
-import sys
-sys.path.append("..")
-
-import numpy as np
 import time
+import numpy as np
+
+import add_fp_to_path
+
 from financepy.models.heston import Heston, HestonNumericalScheme
 from financepy.utils.global_types import OptionTypes
 from financepy.products.equity.equity_vanilla_option import EquityVanillaOption
 from financepy.utils.date import Date
-from FinTestCases import FinTestCases, globalTestCaseMode
+
+from FinTestCases import FinTestCases, global_test_case_mode
+
+test_cases = FinTestCases(__file__, global_test_case_mode)
+
+########################################################################################
 
 
-test_cases = FinTestCases(__file__, globalTestCaseMode)
-
-##########################################################################
-
-
-def testAnalyticalModels():
+def test_analytical_models():
 
     # Reference see table 4.1 of Rouah book
     value_dt = Date(1, 1, 2015)
@@ -47,15 +45,17 @@ def testAnalyticalModels():
         "LEWROU",
         "LEWIS",
         "WEBER",
-        "MCERR")
+        "MCERR",
+    )
 
     for sigma in [0.5, 0.75, 1.0]:
         for rho in [-0.9, -0.5, 0.0]:
-            hestonModel = Heston(v0, kappa, theta, sigma, rho)
+            heston_model = Heston(v0, kappa, theta, sigma, rho)
             for strike_price in np.linspace(95, 105, 3):
                 call_option = EquityVanillaOption(
-                    expiry_dt, strike_price, OptionTypes.EUROPEAN_CALL)
-                value_mc_Heston = hestonModel.value_mc(
+                    expiry_dt, strike_price, OptionTypes.EUROPEAN_CALL
+                )
+                value_mc_heston = heston_model.value_mc(
                     value_dt,
                     call_option,
                     stock_price,
@@ -63,36 +63,58 @@ def testAnalyticalModels():
                     dividend_yield,
                     num_paths,
                     num_steps,
-                    seed)
+                    seed,
+                )
                 start = time.time()
-                valueGatheral = hestonModel.value_gatheral(
-                    value_dt, call_option, stock_price, interest_rate, dividend_yield)
-                valueLewisRouah = hestonModel.value_lewis_rouah(
-                    value_dt, call_option, stock_price, interest_rate, dividend_yield)
-                valueLewis = hestonModel.value_lewis(
-                    value_dt, call_option, stock_price, interest_rate, dividend_yield)
-                valueWeber = hestonModel.value_weber(
-                    value_dt, call_option, stock_price, interest_rate, dividend_yield)
-                err = (value_mc_Heston - valueWeber)
+                value_gatheral = heston_model.value_gatheral(
+                    value_dt,
+                    call_option,
+                    stock_price,
+                    interest_rate,
+                    dividend_yield,
+                )
+                value_lewis_rouah = heston_model.value_lewis_rouah(
+                    value_dt,
+                    call_option,
+                    stock_price,
+                    interest_rate,
+                    dividend_yield,
+                )
+                value_lewis = heston_model.value_lewis(
+                    value_dt,
+                    call_option,
+                    stock_price,
+                    interest_rate,
+                    dividend_yield,
+                )
+                value_weber = heston_model.value_weber(
+                    value_dt,
+                    call_option,
+                    stock_price,
+                    interest_rate,
+                    dividend_yield,
+                )
+                err = value_mc_heston - value_weber
                 end = time.time()
                 elapsed = end - start
-                test_cases.print("%6.3f" % elapsed,
-                                "% 7.5f" % rho,
-                                "%7.5f" % sigma,
-                                "%7.2f" % strike_price,
-                                "%12.9f" % value_mc_Heston,
-                                "%12.9f" % valueGatheral,  # problem
-                                "%12.9f" % valueLewisRouah,
-                                "%12.9f" % valueLewis,
-                                "%12.9f" % valueWeber,
-                                "%12.9f" % err)
+                test_cases.print(
+                    f"{elapsed:6.3f}",
+                    f"{rho: 7.5f}",
+                    f"{sigma:7.5f}",
+                    f"{strike_price:7.2f}",
+                    f"{value_mc_heston:12.9f}",
+                    f"{value_gatheral:12.9f}",
+                    f"{value_lewis_rouah:12.9f}",
+                    f"{value_lewis:12.9f}",
+                    f"{value_weber:12.9f}",
+                    f"{err:12.9f}",
+                )
 
-##########################################################################
+
+########################################################################################
 
 
-def testMonteCarlo():
-
-    import time
+def test_monte_carlo():
 
     # Reference see table 4.1 of Rouah book
     value_dt = Date(1, 1, 2015)
@@ -118,20 +140,27 @@ def testMonteCarlo():
         "FORMULA",
         "EULER_ERR",
         "EULLOG_ERR",
-        "QE_ERR")
+        "QE_ERR",
+    )
 
     for strike_price in np.linspace(95, 105, 3):
         for num_steps in [25, 50]:
             for num_paths in [10000, 20000]:
-                hestonModel = Heston(v0, kappa, theta, sigma, rho)
+                heston_model = Heston(v0, kappa, theta, sigma, rho)
                 call_option = EquityVanillaOption(
-                    expiry_dt, strike_price, OptionTypes.EUROPEAN_CALL)
-                valueWeber = hestonModel.value_weber(
-                    value_dt, call_option, stock_price, interest_rate, dividend_yield)
+                    expiry_dt, strike_price, OptionTypes.EUROPEAN_CALL
+                )
+                value_weber = heston_model.value_weber(
+                    value_dt,
+                    call_option,
+                    stock_price,
+                    interest_rate,
+                    dividend_yield,
+                )
 
                 start = time.time()
 
-                value_mc_EULER = hestonModel.value_mc(
+                value_mc_euler = heston_model.value_mc(
                     value_dt,
                     call_option,
                     stock_price,
@@ -140,8 +169,9 @@ def testMonteCarlo():
                     num_paths,
                     num_steps,
                     seed,
-                    HestonNumericalScheme.EULER)
-                value_mc_EULERLOG = hestonModel.value_mc(
+                    HestonNumericalScheme.EULER,
+                )
+                value_mc_euler_log = heston_model.value_mc(
                     value_dt,
                     call_option,
                     stock_price,
@@ -150,8 +180,9 @@ def testMonteCarlo():
                     num_paths,
                     num_steps,
                     seed,
-                    HestonNumericalScheme.EULERLOG)
-                value_mc_QUADEXP = hestonModel.value_mc(
+                    HestonNumericalScheme.EULERLOG,
+                )
+                value_mc_quadexp = heston_model.value_mc(
                     value_dt,
                     call_option,
                     stock_price,
@@ -160,28 +191,32 @@ def testMonteCarlo():
                     num_paths,
                     num_steps,
                     seed,
-                    HestonNumericalScheme.QUADEXP)
+                    HestonNumericalScheme.QUADEXP,
+                )
 
-                err_EULER = (value_mc_EULER - valueWeber)
-                err_EULERLOG = (value_mc_EULERLOG - valueWeber)
-                err_QUADEXP = (value_mc_QUADEXP - valueWeber)
+                err_euler = value_mc_euler - value_weber
+                err_euler_log = value_mc_euler_log - value_weber
+                err_quadexp = value_mc_quadexp - value_weber
 
                 end = time.time()
                 elapsed = end - start
 
-                test_cases.print(elapsed, rho,
-                                sigma,
-                                strike_price,
-                                num_steps,
-                                num_paths,
-                                valueWeber,
-                                err_EULER,
-                                err_EULERLOG,
-                                err_QUADEXP)
+                test_cases.print(
+                    elapsed,
+                    rho,
+                    sigma,
+                    strike_price,
+                    num_steps,
+                    num_paths,
+                    value_weber,
+                    err_euler,
+                    err_euler_log,
+                    err_quadexp,
+                )
 
-##########################################################################
 
+########################################################################################
 
-testAnalyticalModels()
-testMonteCarlo()
-test_cases.compareTestCases()
+test_analytical_models()
+test_monte_carlo()
+test_cases.compare_test_cases()

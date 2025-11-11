@@ -1,15 +1,18 @@
-###############################################################################
+########################################################################################
 # Copyright (C) 2018, 2019, 2020 Dominic O'Kane
-###############################################################################
+########################################################################################
 
 import numpy as np
 
 from ...utils.error import FinError
 from ...utils.math import test_monotonicity
+from ...utils.date import Date
 
-###############################################################################
+########################################################################################
 # TODO: This should be deleted and replaced with equity_vol_surface
 
+
+from typing import Any, Sequence, Optional
 
 class EquityVolCurve:
     """Class to manage a smile or skew in volatility at a single maturity
@@ -17,11 +20,16 @@ class EquityVolCurve:
     extract the implied pdf of the underyling at maturity. THIS NEEDS TO BE
     SUBSTITUTED WITH FINEQUITYVOLSURFACE."""
 
-    ###########################################################################
+    ####################################################################################
 
     def __init__(
-        self, curve_dt, expiry_dt, strikes, volatilities, polynomial=3
-    ):
+        self,
+        curve_dt: Date,
+        expiry_dt: Date,
+        strikes: np.ndarray,
+        volatilities: np.ndarray,
+        polynomial: int = 3
+    ) -> None:
 
         if expiry_dt <= curve_dt:
             raise FinError("Expiry date before curve date.")
@@ -49,9 +57,9 @@ class EquityVolCurve:
         self._z = np.polyfit(self._strikes, self._volatilities, polynomial)
         self._f = np.poly1d(self._z)
 
-    ###########################################################################
+    ####################################################################################
 
-    def volatility(self, strike):
+    def volatility(self, strike: float) -> float:
         """Return the volatility for a strike using a given polynomial
         interpolation."""
 
@@ -62,13 +70,13 @@ class EquityVolCurve:
 
         return vol
 
-    ###########################################################################
+    ####################################################################################
 
-    def calculate_pdf(self):
+    def calculate_pdf(self) -> Optional[Any]:
         """calculate the probability density function of the underlying using
         the volatility smile or skew curve following the approach set out in
         Breedon and Litzenberger."""
         return
 
 
-###############################################################################
+########################################################################################

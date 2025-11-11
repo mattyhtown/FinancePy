@@ -2,12 +2,14 @@
 # Copyright (C) 2018, 2019, 2020 Dominic O'Kane
 ##############################################################################
 
+from typing import Union
+
 import numpy as np
 import pandas as pd
 
 from ...utils.error import FinError
 from ...utils.date import Date
-from ...utils.global_vars import g_small
+from ...utils.global_vars import G_SMALL
 from ...utils.day_count import DayCountTypes
 from ...utils.frequency import FrequencyTypes, annual_frequency
 from ...utils.calendar import CalendarTypes, DateGenRuleTypes
@@ -41,7 +43,7 @@ class IborSwap:
     def __init__(
         self,
         effective_dt: Date,  # Date interest starts to accrue
-        term_dt_or_tenor: (Date, str),  # Date contract ends
+        term_dt_or_tenor: Union[Date, str],  # Date contract ends
         fixed_leg_type: SwapTypes,
         fixed_cpn: float,  # Fixed cpn (annualised)
         fixed_freq_type: FrequencyTypes,
@@ -145,13 +147,12 @@ class IborSwap:
         """
         Reset fixed rate to atm given curve(s). returns the new atm
         """
-        atm = self.swap_rate(
-            valuation_date, discount_curve, index_curve, first_fixing
-        )
+        atm = self.swap_rate(valuation_date, discount_curve, index_curve, first_fixing)
         self.set_fixed_rate(atm)
         return atm
 
     ###########################################################################
+
     def value(
         self,
         value_dt: Date,
@@ -196,15 +197,16 @@ class IborSwap:
         valuation_date: Date,
         discount_curve: DiscountCurve,
         index_curve: DiscountCurve = None,
-        firstFixingRate=None,
+        first_fixing_rate=None,
     ):
         """
-        A long-hand method that returns various details relevant to valuation in a dictionary
+        A long-hand method that returns various details relevant to valuation in
+        a dictionary
         Slower than value(...) so should not be used when performance is important
 
         We want the output dictionary to have  the same labels for different bechmarks
-        (depos, fras, swaps) because we want to present them together so please do not stick new outputs into
-        one of them only
+        (depos, fras, swaps) because we want to present them together so please
+        do not stick new outputs into one of them only
         """
         if index_curve is None:
             index_curve = discount_curve
@@ -212,48 +214,35 @@ class IborSwap:
         fixed_leg_value = self.fixed_leg.value(valuation_date, discount_curve)
 
         float_leg_value = self.float_leg.value(
-            valuation_date, discount_curve, index_curve, firstFixingRate
+            valuation_date, discount_curve, index_curve, first_fixing_rate
         )
 
         value = fixed_leg_value + float_leg_value
-        pv01 = np.abs(
-            fixed_leg_value / self.fixed_leg.cpn / self.fixed_leg.notional
-        )
-        pay_receive_float = (
-            -1 if self.float_leg.leg_type == SwapTypes.PAY else 1
-        )
-        swap_rate = (
-            float_leg_value
-            / self.float_leg.notional
-            / pv01
-            / pay_receive_float
-        )
+        pv01 = np.abs(fixed_leg_value / self.fixed_leg.cpn / self.fixed_leg.notional)
+        pay_receive_float = -1 if self.float_leg.leg_type == SwapTypes.PAY else 1
+        swap_rate = float_leg_value / self.float_leg.notional / pv01 / pay_receive_float
 
         # VP: There is significant amount of confusion here with swap_type vs notional.
         is_payers = (
-            self.fixed_leg.leg_type == SwapTypes.PAY
-            and self.fixed_leg.notional > 0
+            self.fixed_leg.leg_type == SwapTypes.PAY and self.fixed_leg.notional > 0
         ) or (
-            self.fixed_leg.leg_type == SwapTypes.RECEIVE
-            and self.fixed_leg.notional < 0
+            self.fixed_leg.leg_type == SwapTypes.RECEIVE and self.fixed_leg.notional < 0
         )
 
         pvbp_sign = 1 if is_payers else -1
 
         out = {
             "type": type(self).__name__,
-            "start_date": self.effective_dt,
-            "maturity_date": self.maturity_dt,
-            "day_count_type": self.fixed_leg.dc_type.name,
+            "start_dt": self.effective_dt,
+            "maturity_dt": self.maturity_dt,
+            "dc_type": self.fixed_leg.dc_type.name,
             "fixed_leg_type": self.fixed_leg.leg_type.name,
             "fixed_freq_type": self.fixed_leg.freq_type.name,
             "notional": self.fixed_leg.notional,
             "contract_rate": self.fixed_leg.cpn,
             "market_rate": swap_rate,
             "spot_pvbp": pv01 * pvbp_sign,
-            "fwd_pvbp": pv01
-            * pvbp_sign
-            / discount_curve.df(self.effective_dt),
+            "fwd_pvbp": pv01 * pvbp_sign / discount_curve.df(self.effective_dt),
             "unit_value": value / self.fixed_leg.notional,
             "value": value,
             # ignoring bus day adj type, calendar, etc for now
@@ -291,32 +280,9 @@ class IborSwap:
 
         pv01 = self.pv01(value_dt, discount_curve)
 
-        if abs(pv01) < g_small:
+        if abs(pv01) < G_SMALL:
             raise FinError("PV01 is zero. Cannot compute swap rate.")
 
-        # VP: I commented out this shortcut below because it is inconsistent with value(...) function
-        # there are some subtle differences due to day_counts
-        """
-        float_leg_pv = 0.0
-
-        if valuation_date < self.effective_dt:
-            df0 = discount_curve.df(self.effective_dt)
-        else:
-            df0 = discount_curve.df(value_dt)
-
-        if index_curve is None:
-            df_t = discount_curve.df(self.maturity_dt)
-            float_leg_pv = (df0 - df_t)
-
-        else:
-            float_leg_pv = self.float_leg.value(value_dt,
-                                                discount_curve,
-                                                index_curve,
-                                                first_fixing)
-
-            float_leg_pv /= self.fixed_leg.notional
-        """
-        # VP: this is more consistent with value(..):
         float_leg_pv = self.float_leg.value(
             value_dt, discount_curve, index_curve, first_fixing
         )
@@ -343,18 +309,18 @@ class IborSwap:
         if m == 0:
             raise FinError("Frequency cannot be zero.")
 
-        """ The swap may have started in the past but we can only value
-        payments that have occurred after the valuation date. """
+        # The swap may have started in the past but we can only value
+        # payments that have occurred after the valuation date.
         start_index = 0
         while self.fixed_leg.payment_dts[start_index] < value_dt:
             start_index += 1
 
-        """ If the swap has yet to settle then we do not include the
-        start date of the swap as a cpn payment date. """
+        # If the swap has yet to settle then we do not include the
+        # start date of the swap as a cpn payment date.
         if value_dt <= self.effective_dt:
             start_index = 1
 
-        """ Now PV fixed leg flows. """
+        # Now PV fixed leg flows.
         flat_pv01 = 0.0
         df = 1.0
         alpha = 1.0 / m
@@ -408,4 +374,4 @@ class IborSwap:
         print(self)
 
 
-###############################################################################
+########################################################################################

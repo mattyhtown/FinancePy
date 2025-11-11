@@ -2,6 +2,8 @@
 # Copyright (C) 2018, 2019, 2020 Dominic O'Kane
 ##############################################################################
 
+from typing import Union
+
 from ...utils.error import FinError
 from ...utils.date import Date
 from ...utils.day_count import DayCountTypes
@@ -14,7 +16,7 @@ from ...market.curves.discount_curve import DiscountCurve
 from ...products.rates.swap_float_leg import SwapFloatLeg
 from ...products.equity.equity_swap_leg import EquitySwapLeg
 
-###############################################################################
+########################################################################################
 
 
 class EquitySwap:
@@ -36,7 +38,7 @@ class EquitySwap:
     def __init__(
         self,
         effective_dt: Date,  # Date contract starts or last Equity Reset
-        term_dt_or_tenor: (Date, str),  # Date contract ends
+        term_dt_or_tenor: Union[Date, str],  # Date contract ends
         eq_leg_type: SwapTypes,
         eq_freq_type: FrequencyTypes,
         eq_dc_type: DayCountTypes,
@@ -53,13 +55,15 @@ class EquitySwap:
         dg_type: DateGenRuleTypes = DateGenRuleTypes.BACKWARD,
         end_of_month: bool = False,
     ):
-        """Create an equity swap contract given the contract effective date, its maturity,
-        underlying price and quantity, day count convention and return type and other details.
-        The equity leg parameters have default values that can be overwritten if needed.
-        The start date is contractual and is the same as the settlement date for a new swap.
-        It is the date on which interest starts to accrue. The end of the contract is the
-        termination date. This is not adjusted for business days. The adjusted termination
-        date is called the maturity date. This is calculated."""
+        """Create an equity swap contract given the contract effective date,
+        its maturity, underlying price and quantity, day count convention and
+        return type and other details. The equity leg parameters have default
+        values that can be overwritten if needed.
+        The start date is contractual and is the same as the settlement date
+        for a new swap. It is the date on which interest starts to accrue. The end
+        of the contract is the termination date. This is not adjusted for business
+        days. The adjusted termination date is called the maturity date.
+        This is calculated."""
 
         check_argument_types(self.__init__, locals())
 

@@ -1,6 +1,6 @@
-import pandas as pd
 from typing import Union
 from datetime import datetime
+import pandas as pd
 
 
 from ...utils.error import FinError
@@ -16,6 +16,7 @@ from ...products.rates.ibor_fra import IborFRA
 from ...products.rates.ibor_swap import IborSwap
 from ...products.rates.ibor_deposit import IborDeposit
 
+
 def benchmarks_report(
     benchmarks,
     valuation_date: Date,
@@ -24,18 +25,17 @@ def benchmarks_report(
     include_objects=False,
 ):
     """
-    Generate a DataFrame with one row per bechmark. A benchmark is any object that has a function
-    valuation_details(...) that returns a dictionary of the right shape. Allowed benchmarks at the moment
-    are depos, fras and swaps. Various useful information is reported. This is a bit slow
-    so do not use in performance-critical spots
+    Generate a DataFrame with one row per bechmark. A benchmark is any object that
+    has a function valuation_details(...) that returns a dictionary of the right shape.
+    Allowed benchmarks at the moment are depos, fras and swaps. Various useful
+    information is reported. This is a bit slow so do not use in performance-critical
+    spots
     """
 
     # benchmarks = depos + fras + swaps
     df_bmi = None
     for benchmark in benchmarks:
-        res = benchmark.valuation_details(
-            valuation_date, discount_curve, index_curve
-        )
+        res = benchmark.valuation_details(valuation_date, discount_curve, index_curve)
 
         if df_bmi is None:
             df_bmi = pd.DataFrame.from_dict(res, orient="index").T
@@ -47,26 +47,24 @@ def benchmarks_report(
     return df_bmi
 
 
-def ibor_benchmarks_report(iborCurve: IborSingleCurve, include_objects=False):
+def ibor_benchmarks_report(ibor_curve: IborSingleCurve, include_objects=False):
     """
-    Generate a DataFrame with one row per bechmark used in constructing a given iborCurve.
-    Various useful information is reported. This is a bit slow so do not use in performance-critical spots
+    Generate a DataFrame with one row per bechmark used in constructing a given
+    ibor_curve. Various useful information is reported. This is a bit slow so do
+    not use in performance-critical spots
     """
 
-    benchmarks = (
-        iborCurve.used_deposits + iborCurve.used_fras + iborCurve.used_swaps
-    )
+    benchmarks = ibor_curve.used_deposits + ibor_curve.used_fras + ibor_curve.used_swaps
+
     return benchmarks_report(
         benchmarks,
-        iborCurve.value_dt,
-        iborCurve,
+        ibor_curve.value_dt,
+        ibor_curve,
         include_objects=include_objects,
     )
 
 
-def _date_or_tenor_to_date(
-    date_or_tenor: Union[Date, str, datetime], asof_date: Date
-):
+def _date_or_tenor_to_date(date_or_tenor: Union[Date, str, datetime], asof_date: Date):
     if isinstance(date_or_tenor, str):
         return asof_date.add_tenor(date_or_tenor)
     if isinstance(date_or_tenor, Date):
@@ -75,7 +73,8 @@ def _date_or_tenor_to_date(
         return from_datetime(date_or_tenor)
 
     raise FinError(
-        f"{date_or_tenor} is of type {type(date_or_tenor)}, expecting a Date or a tenor string or a datetime"
+        f"{date_or_tenor} is of type {type(date_or_tenor)}, "
+        f"expecting one of: Date, tenor string, datetime"
     )
 
 
@@ -88,19 +87,16 @@ def _date_or_tenor_to_date_or_tenor(date_or_tenor: Union[Date, str, datetime]):
         return from_datetime(date_or_tenor)
 
     raise FinError(
-        f"{date_or_tenor} is of type {type(date_or_tenor)}, expecting a Date or a tenor string or a datetime"
+        f"{date_or_tenor} is of type {type(date_or_tenor)}, "
+        f"expecting a Date, a tenor string, or a datetime"
     )
 
 
-def _deposit_from_df_row(
-    row: pd.Series, asof_date: Date, calendar_type: CalendarTypes
-):
+def _deposit_from_df_row(row: pd.Series, asof_date: Date, calendar_type: CalendarTypes):
     cls = globals()[row["type"]]
     return cls(
-        start_dt=_date_or_tenor_to_date(row["start_date"], asof_date),
-        maturity_dt_or_tenor=_date_or_tenor_to_date_or_tenor(
-            row["maturity_date"]
-        ),
+        start_dt=_date_or_tenor_to_date(row["start_dt"], asof_date),
+        maturity_dt_or_tenor=_date_or_tenor_to_date_or_tenor(row["maturity_dt"]),
         deposit_rate=row["contract_rate"],
         dc_type=DayCountTypes[row["day_count_type"]],
         notional=row["notional"],
@@ -108,15 +104,11 @@ def _deposit_from_df_row(
     )
 
 
-def _fra_from_df_row(
-    row: pd.Series, asof_date: Date, calendar_type: CalendarTypes
-):
+def _fra_from_df_row(row: pd.Series, asof_date: Date, calendar_type: CalendarTypes):
     cls = globals()[row["type"]]
     return cls(
-        start_dt=_date_or_tenor_to_date(row["start_date"], asof_date),
-        maturity_dt_or_tenor=_date_or_tenor_to_date_or_tenor(
-            row["maturity_date"]
-        ),
+        start_dt=_date_or_tenor_to_date(row["start_dt"], asof_date),
+        maturity_dt_or_tenor=_date_or_tenor_to_date_or_tenor(row["maturity_dt"]),
         fra_rate=row["contract_rate"],
         dc_type=DayCountTypes[row["day_count_type"]],
         notional=row["notional"],
@@ -125,13 +117,11 @@ def _fra_from_df_row(
     )
 
 
-def _swap_from_df_row(
-    row: pd.Series, asof_date: Date, calendar_type: CalendarTypes
-):
+def _swap_from_df_row(row: pd.Series, asof_date: Date, calendar_type: CalendarTypes):
     cls = globals()[row["type"]]
     return cls(
-        effective_dt=_date_or_tenor_to_date(row["start_date"], asof_date),
-        term_dt_or_tenor=_date_or_tenor_to_date_or_tenor(row["maturity_date"]),
+        effective_dt=_date_or_tenor_to_date(row["start_dt"], asof_date),
+        term_dt_or_tenor=_date_or_tenor_to_date_or_tenor(row["maturity_dt"]),
         fixed_leg_type=SwapTypes[row["fixed_leg_type"]],
         fixed_cpn=row["contract_rate"],
         fixed_freq_type=FrequencyTypes[row["fixed_freq_type"]],
@@ -151,15 +141,15 @@ def dataframe_to_benchmarks(
 ):
     """Crete IborBenchmarks from a dataframe. The dataframe should have at least these columns
     with these sample inputs:
-                type   start_date maturity_date     day_count_type notional contract_rate fixed_leg_type fixed_freq_type
+                type   start_dt maturity_dt     dc_type notional contract_rate fixed_leg_type fixed_freq_type
         0   IborDeposit  06-OCT-2001   09-OCT-2001            ACT_360    100.0         0.042            NaN             NaN
         1       IborFRA  09-JAN-2002   09-APR-2002            ACT_360    100.0         0.042            PAY             NaN
         2      IborSwap  09-OCT-2001   09-OCT-2002  THIRTY_E_360_ISDA  1000000         0.042            PAY     SEMI_ANNUAL
 
-    start_date and maturity_date could be Date, string convertible to Tenor, or datetime
+    start_dt and maturity_dt could be Date, string convertible to Tenor, or datetime
     Args:
         df (pd.DataFrame): dataframe as bove, with benchmark info
-        asof_date (Date): if start_date is a tenor string, asof_date is used as an anchor for that
+        asof_date (Date): if start_dt is a tenor string, asof_date is used as an anchor for that
         calendar_type (CalendarTypes): What calendar to use
 
     Returns:

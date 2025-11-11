@@ -14,7 +14,7 @@ from ...utils.helpers import check_argument_types, label_to_string
 from ...market.curves.discount_curve import DiscountCurve
 
 
-###############################################################################
+########################################################################################
 
 
 class BondAnnuity:
@@ -50,13 +50,14 @@ class BondAnnuity:
         self.par = 100.0
 
         self.cpn_dts = []
+
         self.settle_dt = Date(1, 1, 1900)
         self.accrued_int = None
         self.accrued_days = 0.0
         self.alpha = 0.0
 
-        self.pcd = None
-        self.ncd = None
+        self._pcd = None
+        self._ncd = None
         self.flow_amounts = None
 
     ###########################################################################
@@ -67,9 +68,7 @@ class BondAnnuity:
         """Calculate the bond price using some discount curve to present-value
         the bond's cash flows."""
 
-        dirty_price = self.dirty_price_from_discount_curve(
-            settle_dt, discount_curve
-        )
+        dirty_price = self.dirty_price_from_discount_curve(settle_dt, discount_curve)
         accrued = self.accrued_int * self.par
         clean_price = dirty_price - accrued
         return clean_price
@@ -119,14 +118,14 @@ class BondAnnuity:
             dg_type,
         ).generate()
 
-        self.pcd = self.cpn_dts[0]
-        self.ncd = self.cpn_dts[1]
+        self._pcd = self.cpn_dts[0]
+        self._ncd = self.cpn_dts[1]
         self.accrued_interest(settle_dt, 1.0)
 
         self.flow_amounts = [0.0]
         basis = DayCount(self.dc_type)
 
-        prev_dt = self.pcd
+        prev_dt = self._pcd
 
         for next_dt in self.cpn_dts[1:]:
             alpha = basis.year_frac(prev_dt, next_dt)[0]
@@ -148,21 +147,17 @@ class BondAnnuity:
 
         dc = DayCount(self.dc_type)
 
-        (acc_factor, num, _) = dc.year_frac(
-            self.pcd, settle_dt, self.ncd, self.freq
-        )
+        (acc_factor, num, _) = dc.year_frac(self._pcd, settle_dt, self._ncd, self.freq)
 
         self.alpha = 1.0 - acc_factor * self.freq
 
-        self.accrual_factor = acc_factor
         self.accrued_int = acc_factor * face * self.cpn
         self.accrued_days = num
-
         return self.accrued_int
 
     ###########################################################################
 
-    def print_payments(self, settle_dt: Date, face: float):
+    def print_payments(self, settle_dt: Date, face: float = 100):
         """Print a list of the unadjusted coupon payment dates used in
         analytic calculations for the bond."""
 
@@ -196,4 +191,4 @@ class BondAnnuity:
         print(self)
 
 
-###############################################################################
+########################################################################################

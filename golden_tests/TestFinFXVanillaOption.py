@@ -1,13 +1,9 @@
-###############################################################################
 # Copyright (C) 2018, 2019, 2020 Dominic O'Kane
-###############################################################################
 
 import numpy as np
 import time
 
-import sys
-
-sys.path.append("..")
+import add_fp_to_path
 
 from financepy.utils.global_types import OptionTypes
 from financepy.products.fx.fx_vanilla_option import FXVanillaOption
@@ -19,15 +15,15 @@ from financepy.utils.calendar import CalendarTypes
 from financepy.products.rates.ibor_single_curve import IborSingleCurve
 from financepy.products.rates.ibor_deposit import IborDeposit
 from financepy.utils.date import Date
-from FinTestCases import FinTestCases, globalTestCaseMode
+from FinTestCases import FinTestCases, global_test_case_mode
 
 
-test_cases = FinTestCases(__file__, globalTestCaseMode)
+test_cases = FinTestCases(__file__, global_test_case_mode)
 
-##########################################################################
+########################################################################################
 
 
-def test_FinFXVanillaOptionWystupExample1():
+def test_fin_fx_vanilla_option_wystup_example1():
 
     # Example from Book extract by Uwe Wystup with results in Table 1.2
     # https://mathfinance.com/wp-content/uploads/2017/06/FXOptionsStructuredProducts2e-Extract.pdf
@@ -42,8 +38,8 @@ def test_FinFXVanillaOptionWystupExample1():
     # DOM = USD , FOR = EUR
     ccy1 = "EUR"
     ccy2 = "USD"
-    ccy1CCRate = 0.030  # EUR
-    ccy2CCRate = 0.025  # USD
+    ccy1_cc_rate = 0.030  # EUR
+    ccy2_cc_rate = 0.025  # USD
 
     currency_pair = ccy1 + ccy2  # Always ccy1ccy2
     spot_fx_rate = 1.20
@@ -52,8 +48,8 @@ def test_FinFXVanillaOptionWystupExample1():
 
     notional = 1000000.0
 
-    domestic_curve = DiscountCurveFlat(value_dt, ccy2CCRate)
-    foreign_curve = DiscountCurveFlat(value_dt, ccy1CCRate)
+    domestic_curve = DiscountCurveFlat(value_dt, ccy2_cc_rate)
+    foreign_curve = DiscountCurveFlat(value_dt, ccy1_cc_rate)
 
     model = BlackScholes(volatility)
 
@@ -97,10 +93,10 @@ def test_FinFXVanillaOptionWystupExample1():
     test_cases.print(value, delta)
 
 
-###############################################################################
+########################################################################################
 
 
-def test_FinFXVanillaOptionWystupExample2():
+def test_fin_fx_vanilla_option_wystup_example2():
 
     # Example Bloomberg Pricing at
     # https://stackoverflow.com/questions/48778712/fx-vanilla-call-price-in-quantlib-doesnt-match-bloomberg
@@ -113,8 +109,8 @@ def test_FinFXVanillaOptionWystupExample2():
     # DOM = USD , FOR = EUR
     ccy1 = "EUR"
     ccy2 = "USD"
-    ccy1CCRate = 0.0396  # EUR
-    ccy2CCRate = 0.0357  # USD
+    ccy1_cc_rate = 0.0396  # EUR
+    ccy2_cc_rate = 0.0357  # USD
 
     currency_pair = ccy1 + ccy2  # Always ccy1ccy2
     spot_fx_rate = 0.9090
@@ -123,8 +119,8 @@ def test_FinFXVanillaOptionWystupExample2():
 
     notional = 1000000.0
 
-    domestic_curve = DiscountCurveFlat(value_dt, ccy2CCRate)
-    foreign_curve = DiscountCurveFlat(value_dt, ccy1CCRate)
+    domestic_curve = DiscountCurveFlat(value_dt, ccy2_cc_rate)
+    foreign_curve = DiscountCurveFlat(value_dt, ccy1_cc_rate)
 
     model = BlackScholes(volatility)
 
@@ -153,10 +149,10 @@ def test_FinFXVanillaOptionWystupExample2():
     test_cases.print(value, delta)
 
 
-###############################################################################
+########################################################################################
 
 
-def test_FinFXVanillaOptionBloombergExample():
+def test_fin_fx_vanilla_option_bloomberg_example():
 
     # Example Bloomberg Pricing at
     # https://stackoverflow.com/questions/48778712/fx-vanilla-call-price-in-quantlib-doesnt-match-bloomberg
@@ -169,8 +165,8 @@ def test_FinFXVanillaOptionBloombergExample():
     # DOM = USD , FOR = EUR
     for_name = "EUR"
     dom_name = "USD"
-    forDepoRate = 0.05  # EUR
-    domDepoRate = 0.02  # USD
+    for_depo_rate = 0.05  # EUR
+    dom_depo_rate = 0.02  # USD
 
     currency_pair = for_name + dom_name  # Always FORDOM
     spot_fx_rate = 1.30
@@ -190,7 +186,7 @@ def test_FinFXVanillaOptionBloombergExample():
     depo = IborDeposit(
         settle_dt,
         maturity_dt,
-        domDepoRate,
+        dom_depo_rate,
         DayCountTypes.ACT_360,
         notional,
         cal_type,
@@ -204,7 +200,7 @@ def test_FinFXVanillaOptionBloombergExample():
     depo = IborDeposit(
         settle_dt,
         maturity_dt,
-        forDepoRate,
+        for_depo_rate,
         DayCountTypes.ACT_360,
         notional,
         cal_type,
@@ -236,10 +232,10 @@ def test_FinFXVanillaOptionBloombergExample():
     test_cases.print(value, delta)
 
 
-###############################################################################
+########################################################################################
 
 
-def test_FinFXVanillaOptionHullExample():
+def test_fin_fx_vanilla_option_hull_example():
 
     #   Example from Hull 4th edition page 284
     value_dt = Date(1, 1, 2015)
@@ -287,8 +283,6 @@ def test_FinFXVanillaOptionHullExample():
         duration = end - start
         test_cases.print(num_paths, value, value_mc)
 
-    ##########################################################################
-
     spot_fx_rates = np.arange(100, 200, 10)
     spot_fx_rates = spot_fx_rates / 100.0
     num_paths = 100000
@@ -322,8 +316,6 @@ def test_FinFXVanillaOptionHullExample():
         duration = end - start
         test_cases.print(num_paths, value, value_mc)
 
-    ##########################################################################
-
     spot_fx_rates = np.arange(100, 200, 10) / 100.0
     num_paths = 100000
 
@@ -355,8 +347,6 @@ def test_FinFXVanillaOptionHullExample():
         end = time.time()
         duration = end - start
         test_cases.print(spot_fx_rate, value, value_mc)
-
-    ##########################################################################
 
     spot_fx_rates = np.arange(100, 200, 10) / 100.0
 
@@ -431,8 +421,6 @@ def test_FinFXVanillaOptionHullExample():
         rho = 999
         test_cases.print(spot_fx_rate, value, delta, vega, theta, rho)
 
-    ##########################################################################
-
     test_cases.header("SPOT FX RATE", "VALUE_BS", "VOL_IN", "IMPLD_VOL")
 
     spot_fx_rates = np.arange(100, 200, 10) / 100.0
@@ -451,17 +439,17 @@ def test_FinFXVanillaOptionHullExample():
             value_dt, spot_fx_rate, domestic_curve, foreign_curve, model
         )["v"]
 
-        impliedVol = call_option.implied_volatility(
+        implied_vol = call_option.implied_volatility(
             value_dt, spot_fx_rate, domestic_curve, foreign_curve, value
         )
 
-        test_cases.print(spot_fx_rate, value, volatility, impliedVol)
+        test_cases.print(spot_fx_rate, value, volatility, implied_vol)
 
 
-###############################################################################
+########################################################################################
 
 
-def test_FinFXVanillaOptionSABRExample():
+def test_fin_fx_vanilla_option_sabr_example():
     """
     Test case for FXVanilla option pricing with SABR model
     """
@@ -499,9 +487,7 @@ def test_FinFXVanillaOptionSABRExample():
     model = SABR(alpha, beta, rho, nu)
     black_vol = volatility
     t_exp = 0.8444  # 10M
-    model.set_alpha_from_black_vol(
-        black_vol, spot_fx_rate, strike_price, t_exp
-    )
+    model.set_alpha_from_black_vol(black_vol, spot_fx_rate, strike_price, t_exp)
 
     spot_fx_rate = np.linspace(80, 300, 1000)
 
@@ -519,12 +505,11 @@ def test_FinFXVanillaOptionSABRExample():
     test_cases.print(spot_fx_rate, call_value)
 
 
-###############################################################################
+########################################################################################
 
-
-test_FinFXVanillaOptionWystupExample1()
-test_FinFXVanillaOptionWystupExample2()
-test_FinFXVanillaOptionBloombergExample()
-test_FinFXVanillaOptionHullExample()
-test_FinFXVanillaOptionSABRExample()
-test_cases.compareTestCases()
+test_fin_fx_vanilla_option_wystup_example1()
+test_fin_fx_vanilla_option_wystup_example2()
+test_fin_fx_vanilla_option_bloomberg_example()
+test_fin_fx_vanilla_option_hull_example()
+test_fin_fx_vanilla_option_sabr_example()
+test_cases.compare_test_cases()

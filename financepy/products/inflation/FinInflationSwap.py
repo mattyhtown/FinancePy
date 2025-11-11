@@ -1,7 +1,8 @@
-###############################################################################
+########################################################################################
 # Copyright (C) 2018, 2019, 2020 Dominic O'Kane
-###############################################################################
+########################################################################################
 
+from typing import Union
 
 from ...utils.error import FinError
 from ...utils.date import Date
@@ -11,7 +12,7 @@ from ...utils.calendar import BusDayAdjustTypes
 from ...utils.day_count import DayCount, DayCountTypes
 from ...utils.helpers import label_to_string, check_argument_types
 
-###############################################################################
+########################################################################################
 
 
 class FinInflationSwap:
@@ -43,9 +44,9 @@ class FinInflationSwap:
         self,
         start_dt: Date,  # The date the FRA starts to accrue
         # End of the Ibor rate period
-        maturity_dt_or_tenor: (Date, str),
+        maturity_dt_or_tenor: Union[Date, str],
         fra_rate: float,  # The fixed contractual FRA rate
-        day_count_type: DayCountTypes,  # For interest period
+        dc_type: DayCountTypes,  # For interest period
         notional: float = 100.0,
         pay_fixed_rate: bool = True,  # True if the FRA rate is being paid
         cal_type: CalendarTypes = CalendarTypes.WEEKEND,
@@ -61,7 +62,7 @@ class FinInflationSwap:
         self.cal_type = cal_type
         self.bd_type = bd_type
 
-        if type(maturity_dt_or_tenor) is Date:
+        if isinstance(maturity_dt_or_tenor, Date):
             maturity_dt = maturity_dt_or_tenor
         else:
             maturity_dt = start_dt.add_tenor(maturity_dt_or_tenor)
@@ -75,7 +76,7 @@ class FinInflationSwap:
         self.maturity_dt = maturity_dt
         self.fra_rate = fra_rate
         self.pay_fixed_rate = pay_fixed_rate
-        self.dc_type = day_count_type
+        self.dc_type = dc_type
         self.notional = notional
 
     ###########################################################################
@@ -150,4 +151,4 @@ class FinInflationSwap:
         print(self)
 
 
-###############################################################################
+########################################################################################

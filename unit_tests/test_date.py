@@ -1,35 +1,44 @@
-###############################################################################
 # Copyright (C) 2018, 2019, 2020 Dominic O'Kane
-###############################################################################
 
 import datetime
 import numpy as np
-import time
 
 from financepy.utils.date import Date, date_range
-
-# Not under test
-
-from financepy.utils.date import DateFormatTypes, set_date_format
+from financepy.utils.date_format import DateFormatTypes, set_date_format
 
 set_date_format(DateFormatTypes.UK_LONGEST)
 
 # new sample tests
 
+########################################################################################
+
 
 def test_add_days():
+
     assert Date(1, 1, 2018).add_days(-1).add_days(1) == Date(1, 1, 2018)
 
 
+########################################################################################
+
+
 def test_from_string():
+
     assert Date.from_string("1-1-2018", "%d-%m-%Y") == Date(1, 1, 2018)
 
 
+########################################################################################
+
+
 def test_weekday():
+
     assert Date(3, 3, 2021).weekday == Date.WED
 
 
+########################################################################################
+
+
 def test_excel_representation():
+
     assert Date(5, 1, 1900).excel_dt == 5
     assert Date(1, 3, 2020).excel_dt == 43891
 
@@ -39,8 +48,10 @@ def test_excel_representation():
 # - do not need many values, just one call
 # - some tests may be "parametrised" (probably not todo now)
 
+########################################################################################
 
-def test_Date():
+
+def test_date():
 
     start_dt = Date(1, 1, 2018)
 
@@ -63,7 +74,10 @@ def test_Date():
     assert next_imm_date == Date(20, 3, 2019)
 
 
-def test_DateTenors():
+########################################################################################
+
+
+def test_date_tenors():
 
     start_dt = Date(23, 2, 2018)
 
@@ -158,28 +172,31 @@ def test_DateTenors():
     assert start_dt.add_tenor(tenor) == Date(23, 2, 1998)
 
 
-def test_DateRange():
+########################################################################################
+
+
+def test_date_range():
 
     start_dt = Date(1, 1, 2010)
 
     # Default
     end_dt = start_dt.add_days(3)
-    dtRange = date_range(start_dt, end_dt)
-    assert dtRange[0] == Date(1, 1, 2010)
-    assert dtRange[-1] == Date(4, 1, 2010)
+    dt_range = date_range(start_dt, end_dt)
+    assert dt_range[0] == Date(1, 1, 2010)
+    assert dt_range[-1] == Date(4, 1, 2010)
 
     # 1W Tenor
     end_dt = start_dt.add_days(20)
     tenor = "1W"
-    dtRange = date_range(start_dt, end_dt, tenor)
-    assert dtRange[0] == Date(1, 1, 2010)
-    assert dtRange[-1] == Date(21, 1, 2010)
+    dt_range = date_range(start_dt, end_dt, tenor)
+    assert dt_range[0] == Date(1, 1, 2010)
+    assert dt_range[-1] == Date(21, 1, 2010)
 
     # 7D Tenor
     tenor = "7D"
-    dtRange = date_range(start_dt, end_dt, tenor)
-    assert dtRange[1] == Date(8, 1, 2010)
-    assert dtRange[2] == Date(15, 1, 2010)
+    dt_range = date_range(start_dt, end_dt, tenor)
+    assert dt_range[1] == Date(8, 1, 2010)
+    assert dt_range[2] == Date(15, 1, 2010)
 
     # Same start_dt
     assert date_range(start_dt, start_dt)[0] == Date(1, 1, 2010)
@@ -188,7 +205,10 @@ def test_DateRange():
     assert len(date_range(end_dt, start_dt)) == 0
 
 
-def test_DateAddMonths():
+########################################################################################
+
+
+def test_date_add_months():
 
     start_dt = Date(1, 1, 2010)
 
@@ -201,7 +221,10 @@ def test_DateAddMonths():
     assert len(dates) == len(months)
 
 
-def test_DateAddYears():
+########################################################################################
+
+
+def test_date_add_years():
 
     start_dt = Date(1, 1, 2010)
 
@@ -237,7 +260,10 @@ def test_DateAddYears():
     assert dates_fractional_np[-1] == Date(2, 1, 2020)
 
 
-def test_DateFormat():
+########################################################################################
+
+
+def test_date_format():
 
     dt = Date(20, 10, 2019)
 
@@ -254,28 +280,25 @@ def test_DateFormat():
     assert str(dt) == "SUN 20 OCT 2019"
 
 
-def test_IntraDay():
+########################################################################################
+
+
+def test_intra_day():
 
     d1 = Date(20, 10, 2019, 0, 0, 0)
     d2 = Date(25, 10, 2019, 0, 0, 0)
     diff = d2 - d1
     assert round(diff, 4) == 5
 
-    ###########################################################################
-
     d1 = Date(20, 10, 2019, 10, 0, 0)
     d2 = Date(25, 10, 2019, 10, 25, 0)
     diff = d2 - d1
     assert round(diff, 4) == 5.0174
 
-    ###########################################################################
-
     d1 = Date(20, 10, 2019, 10, 0, 0)
     d2 = Date(20, 10, 2019, 10, 25, 30)
     diff = d2 - d1
     assert round(diff, 4) == 0.0177
-
-    ###########################################################################
 
     d1 = Date(19, 10, 2019, 10, 0, 0)
     d2 = Date(20, 10, 2019, 10, 25, 40)
@@ -283,7 +306,10 @@ def test_IntraDay():
     assert round(diff, 4) == 1.0178
 
 
-def test_DateEOM():
+########################################################################################
+
+
+def test_date_eom():
 
     dt = Date(29, 2, 2000)
     assert dt.is_eom() is True
@@ -334,26 +360,38 @@ def test_DateEOM():
     assert dt.eom().is_eom() is True
 
 
+########################################################################################
+
+
 def test_datetime():
 
     dt = Date(30, 12, 2021)
     assert dt.datetime()
 
 
+########################################################################################
+
+
 def test_from_date():
+
     y, m, d = 2022, 11, 8
     dt1 = Date(d, m, y)
     dt2 = Date.from_date(datetime.date(y, m, d))
     assert dt1 == dt2
 
 
+########################################################################################
+
+
 def test_list_of_date():
-    dates = [Date(1, 1, 2020),
-             Date(1, 2, 2020),
-             Date(4, 3, 2020),
-             Date(1, 1, 2021),
-             Date(1, 1, 2022),
-             ]
+
+    dates = [
+        Date(1, 1, 2020),
+        Date(1, 2, 2020),
+        Date(4, 3, 2020),
+        Date(1, 1, 2021),
+        Date(1, 1, 2022),
+    ]
 
     # Test logical operations
     assert all(dates < Date(1, 1, 2023))

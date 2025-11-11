@@ -10,7 +10,7 @@ from ...utils.calendar import BusDayAdjustTypes
 from ...utils.calendar import DateGenRuleTypes
 from ...utils.day_count import DayCountTypes
 from ...utils.frequency import FrequencyTypes
-from ...utils.global_vars import g_days_in_year
+from ...utils.global_vars import G_DAYS_IN_YEARS
 from ...utils.math import ONE_MILLION
 from ...utils.global_types import FinExerciseTypes
 from ...utils.global_types import SwapTypes
@@ -24,7 +24,7 @@ from ...models.bk_tree import BKTree
 from ...models.hw_tree import HWTree
 
 
-###############################################################################
+########################################################################################
 
 
 class IborBermudanSwaption:
@@ -120,8 +120,8 @@ class IborBermudanSwaption:
         #  I need to do this to generate the fixed leg flows
         self.pv01 = self.underlying_swap.pv01(value_dt, discount_curve)
 
-        t_exp = (self.exercise_dt - value_dt) / g_days_in_year
-        t_mat = (self.maturity_dt - value_dt) / g_days_in_year
+        t_exp = (self.exercise_dt - value_dt) / G_DAYS_IN_YEARS
+        t_mat = (self.maturity_dt - value_dt) / G_DAYS_IN_YEARS
 
         #######################################################################
         # For the tree models we need to generate a vector of the coupons
@@ -140,7 +140,7 @@ class IborBermudanSwaption:
             flow_dt = self.underlying_swap.fixed_leg.payment_dts[i_flow]
 
             if flow_dt > self.exercise_dt:
-                cpn_time = (flow_dt - value_dt) / g_days_in_year
+                cpn_time = (flow_dt - value_dt) / G_DAYS_IN_YEARS
                 cpn_flow = swap.fixed_leg.payments[i_flow - 1] / self.notional
                 cpn_times.append(cpn_time)
                 cpn_flows.append(cpn_flow)
@@ -154,8 +154,8 @@ class IborBermudanSwaption:
         # Allow exercise on coupon dates but control this later for europeans
         self.call_times = cpn_times
 
-        df_times = discount_curve._times
-        df_values = discount_curve._dfs
+        df_times = discount_curve.times
+        df_values = discount_curve.dfs
 
         face_amount = 1.0
         strike_price = 1.0  # Floating leg is assumed to price at par
@@ -165,11 +165,7 @@ class IborBermudanSwaption:
         # the multi-callable nature of the Bermudan Swaption
         #######################################################################
 
-        if (
-            isinstance(model, BDTTree)
-            or isinstance(model, BKTree)
-            or isinstance(model, HWTree)
-        ):
+        if isinstance(model, (BDTTree, BKTree, HWTree)):
 
             model.build_tree(t_mat, df_times, df_values)
 
@@ -196,7 +192,7 @@ class IborBermudanSwaption:
     ###########################################################################
 
     def print_swaption_value(self):
-
+        """Print the swaption value and the underlying swap details."""
         print("SWAP PV01:", self.pv01)
 
         n = len(self.cpn_times)
@@ -231,4 +227,4 @@ class IborBermudanSwaption:
         print(self)
 
 
-###############################################################################
+########################################################################################

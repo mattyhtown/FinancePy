@@ -1,24 +1,19 @@
-###############################################################################
 # Copyright (C) 2018, 2019, 2020 Dominic O'Kane
-###############################################################################
 
-import sys
+import add_fp_to_path
 
-sys.path.append("..")
-
-from FinTestCases import FinTestCases, globalTestCaseMode
 from financepy.products.bonds.bond_mortgage import BondMortgageTypes
 from financepy.products.bonds.bond_mortgage import BondMortgage
 from financepy.utils.date import Date
 
+from FinTestCases import FinTestCases, global_test_case_mode
 
-test_cases = FinTestCases(__file__, globalTestCaseMode)
+test_cases = FinTestCases(__file__, global_test_case_mode)
+
+########################################################################################
 
 
-###############################################################################
-
-
-def test_BondMortgage():
+def test_bond_mortgage():
 
     principal = 130000
     start_dt = Date(23, 2, 2018)
@@ -30,9 +25,7 @@ def test_BondMortgage():
 
     num_flows = len(mortgage.schedule.adjusted_dts)
 
-    test_cases.header(
-        "PAYMENT DATE", "INTEREST", "PRINCIPAL", "OUTSTANDING", "TOTAL"
-    )
+    test_cases.header("PAYMENT DATE", "INTEREST", "PRINCIPAL", "OUTSTANDING", "TOTAL")
 
     for i in range(0, num_flows):
         test_cases.print(
@@ -45,9 +38,7 @@ def test_BondMortgage():
 
     mortgage.generate_flows(rate, BondMortgageTypes.INTEREST_ONLY)
 
-    test_cases.header(
-        "PAYMENT DATE", "INTEREST", "PRINCIPAL", "OUTSTANDING", "TOTAL"
-    )
+    test_cases.header("PAYMENT DATE", "INTEREST", "PRINCIPAL", "OUTSTANDING", "TOTAL")
 
     for i in range(0, num_flows):
         test_cases.print(
@@ -59,8 +50,7 @@ def test_BondMortgage():
         )
 
 
-###############################################################################
+########################################################################################
 
-
-test_BondMortgage()
-test_cases.compareTestCases()
+test_bond_mortgage()
+test_cases.compare_test_cases()

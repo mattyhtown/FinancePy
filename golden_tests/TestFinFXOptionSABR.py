@@ -1,25 +1,23 @@
-###############################################################################
 # Copyright (C) 2018, 2019, 2020 Dominic O'Kane
-###############################################################################
 
-from FinTestCases import FinTestCases, globalTestCaseMode
+import numpy as np
+
+import add_fp_to_path
+
 from financepy.market.curves.discount_curve_flat import DiscountCurveFlat
 from financepy.models.black_scholes import BlackScholes
 from financepy.products.fx.fx_vanilla_option import FXVanillaOption
 from financepy.utils.global_types import OptionTypes
 from financepy.utils.date import Date
-import numpy as np
-import sys
 
-sys.path.append("..")
+from FinTestCases import FinTestCases, global_test_case_mode
 
+test_cases = FinTestCases(__file__, global_test_case_mode)
 
-test_cases = FinTestCases(__file__, globalTestCaseMode)
-
-##########################################################################
+########################################################################################
 
 
-def test_FinFXOptionSABR():
+def test_fin_fx_option_sabr():
 
     # UNFINISHED
     # There is no FXAmericanOption class. It is embedded in the FXVanillaOption
@@ -31,8 +29,8 @@ def test_FinFXOptionSABR():
     # In BS the FX rate is the price in domestic of one unit of foreign
     # In case of EURUSD = 1.3 the domestic currency is USD and foreign is EUR
     # DOM = USD , FOR = EUR
-    ccy1CCRate = 0.030  # EUR
-    ccy2CCRate = 0.025  # USD
+    ccy1_cc_rate = 0.030  # EUR
+    ccy2_cc_rate = 0.025  # USD
 
     spot_fx_rate = 1.20
     strike_fx_rate = 1.250
@@ -40,8 +38,8 @@ def test_FinFXOptionSABR():
 
     notional = 1000000.0
 
-    domestic_curve = DiscountCurveFlat(value_dt, ccy2CCRate)
-    foreign_curve = DiscountCurveFlat(value_dt, ccy1CCRate)
+    domestic_curve = DiscountCurveFlat(value_dt, ccy2_cc_rate)
+    foreign_curve = DiscountCurveFlat(value_dt, ccy1_cc_rate)
 
     model = BlackScholes(volatility)
 
@@ -131,8 +129,7 @@ def test_FinFXOptionSABR():
         )
 
 
-###############################################################################
+########################################################################################
 
-
-test_FinFXOptionSABR()
-test_cases.compareTestCases()
+test_fin_fx_option_sabr()
+test_cases.compare_test_cases()

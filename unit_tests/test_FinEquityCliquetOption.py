@@ -1,6 +1,4 @@
-###############################################################################
 # Copyright (C) 2018, 2019, 2020 Dominic O'Kane
-###############################################################################
 
 from financepy.utils.global_types import OptionTypes
 from financepy.utils.date import Date
@@ -9,18 +7,17 @@ from financepy.market.curves.discount_curve_flat import DiscountCurveFlat
 from financepy.models.black_scholes import BlackScholes
 from financepy.products.equity.equity_cliquet_option import EquityCliquetOption
 
+########################################################################################
 
-def test_EquityCliquetOption():
+
+def test_equity_cliquet_option():
 
     start_dt = Date(1, 1, 2014)
     final_expiry_dt = Date(1, 1, 2017)
     freq_type = FrequencyTypes.QUARTERLY
-    option_type = OptionTypes.EUROPEAN_CALL
+    opt_type = OptionTypes.EUROPEAN_CALL
 
-    cliquetOption = EquityCliquetOption(start_dt,
-                                        final_expiry_dt,
-                                        option_type,
-                                        freq_type)
+    cliquet_option = EquityCliquetOption(start_dt, final_expiry_dt, opt_type, freq_type)
 
     value_dt = Date(1, 1, 2015)
     stock_price = 100.0
@@ -31,10 +28,8 @@ def test_EquityCliquetOption():
     discount_curve = DiscountCurveFlat(value_dt, interest_rate)
     dividend_curve = DiscountCurveFlat(value_dt, dividend_yield)
 
-    v = cliquetOption.value(value_dt,
-                            stock_price,
-                            discount_curve,
-                            dividend_curve,
-                            model)
+    v = cliquet_option.value(
+        value_dt, stock_price, discount_curve, dividend_curve, model
+    )
 
     assert round(v, 4) == 34.5287

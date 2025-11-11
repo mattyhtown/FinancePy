@@ -10,14 +10,14 @@ import numpy as np
 
 from ...utils.error import FinError
 from ...utils.day_count import DayCountTypes
-from ...utils.global_vars import g_days_in_year
+from ...utils.global_vars import G_DAYS_IN_YEARS
 from ...utils.math import ONE_MILLION
 from ...utils.date import Date
 
 from ...utils.helpers import label_to_string, check_argument_types
 from ...products.rates.ibor_fra import IborFRA
 
-###############################################################################
+########################################################################################
 
 
 class IborFuture:
@@ -30,7 +30,7 @@ class IborFuture:
         self,
         today_dt: Date,
         future_number: int,  # The number of the future after today_dt
-        futureTenor: str = "3M",  # '1M', '2M', '3M'
+        future_tenor: str = "3M",  # '1M', '2M', '3M'
         dc_type: DayCountTypes = DayCountTypes.ACT_360,
         contract_size: float = ONE_MILLION,
     ):
@@ -44,12 +44,12 @@ class IborFuture:
         if future_number < 1:
             raise FinError("Future number must be 1 or more")
 
-        if futureTenor != "3M" and futureTenor != "3m":
+        if future_tenor not in ["3M", "3m"]:
             raise FinError("Only 3M IMM futures handled currently.")
 
         self.delivery_dt = today_dt.next_imm_date()
 
-        for iFut in range(0, future_number - 1):
+        for _ in range(0, future_number - 1):
             self.delivery_dt = self.delivery_dt.next_imm_date()
 
         self.end_of_interest_period = self.delivery_dt.next_imm_date()
@@ -92,12 +92,12 @@ class IborFuture:
         negative convexity (in percent). This is then divided by 100 before
         being added to the futures rate."""
 
-        futRate = (100.0 - futures_price) / 100.0
+        futures_rate = (100.0 - futures_price) / 100.0
 
         if convexity < 0:
-            fra_rate = futRate + convexity / 100.0
+            fra_rate = futures_rate + convexity / 100.0
         else:
-            fra_rate = futRate - convexity / 100.0
+            fra_rate = futures_rate - convexity / 100.0
 
         return fra_rate
 
@@ -114,8 +114,8 @@ class IborFuture:
 
         a = mean_reversion
         t0 = 0.0
-        t1 = (self.last_trading_dt - value__dt) / g_days_in_year
-        t2 = (self.end_of_interest_period - value__dt) / g_days_in_year
+        t1 = (self.last_trading_dt - value__dt) / G_DAYS_IN_YEARS
+        t2 = (self.end_of_interest_period - value__dt) / G_DAYS_IN_YEARS
 
         # Hull White model for short rate dr = (theta(t)-ar) dt + sigma * dz
         # This reduces to Ho-Lee when a = 0 so to avoid divergences I provide
@@ -149,4 +149,4 @@ class IborFuture:
         return s
 
 
-###############################################################################
+########################################################################################

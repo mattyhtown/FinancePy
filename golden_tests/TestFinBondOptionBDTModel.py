@@ -1,20 +1,16 @@
-###############################################################################
 # Copyright (C) 2018, 2019, 2020 Dominic O'Kane
-###############################################################################
 
-import numpy as np
 import time
+
 import matplotlib.pyplot as plt
+import numpy as np
 
-import sys
+import add_fp_to_path
 
-sys.path.append("..")
-
-from FinTestCases import FinTestCases, globalTestCaseMode
 from financepy.models.bdt_tree import BDTTree
 from financepy.utils.global_types import OptionTypes
 from financepy.products.bonds.bond_option import BondOption
-from financepy.utils.global_vars import g_days_in_year
+from financepy.utils.global_vars import G_DAYS_IN_YEARS
 from financepy.utils.day_count import DayCountTypes
 from financepy.utils.frequency import FrequencyTypes
 from financepy.products.bonds.bond import Bond
@@ -23,14 +19,16 @@ from financepy.market.curves.discount_curve import DiscountCurve
 from financepy.utils.date import Date
 
 
-test_cases = FinTestCases(__file__, globalTestCaseMode)
+from FinTestCases import FinTestCases, global_test_case_mode
 
-plotGraphs = False
+test_cases = FinTestCases(__file__, global_test_case_mode)
 
-###############################################################################
+PLOT_GRAPHS = False
+
+########################################################################################
 
 
-def test_BondOption():
+def test_bond_option():
 
     settle_dt = Date(1, 12, 2019)
     issue_dt = Date(1, 12, 2018)
@@ -40,7 +38,7 @@ def test_BondOption():
     dc_type = DayCountTypes.ACT_ACT_ICMA
     bond = Bond(issue_dt, maturity_dt, coupon, freq_type, dc_type)
 
-    t_mat = (maturity_dt - settle_dt) / g_days_in_year
+    t_mat = (maturity_dt - settle_dt) / G_DAYS_IN_YEARS
     times = np.linspace(0, t_mat, 20)
     dates = settle_dt.add_years(times)
     dfs = np.exp(-0.05 * times)
@@ -49,11 +47,9 @@ def test_BondOption():
     expiry_dt = settle_dt.add_tenor("18m")
     strike_price = 105.0
 
-    ###########################################################################
-
     strikes = [80, 100, 120]
 
-    option_type = OptionTypes.EUROPEAN_CALL
+    opt_type = OptionTypes.EUROPEAN_CALL
 
     test_cases.header("LABEL", "VALUE")
 
@@ -68,7 +64,7 @@ def test_BondOption():
 
         sigma = 0.20
 
-        bond_option = BondOption(bond, expiry_dt, strike_price, option_type)
+        bond_option = BondOption(bond, expiry_dt, strike_price, opt_type)
         model = BDTTree(sigma, num_time_steps)
         v = bond_option.value(settle_dt, discount_curve, model)
         test_cases.print("EUROPEAN CALL - BK", strike_price, v)
@@ -77,14 +73,12 @@ def test_BondOption():
 
         sigma = 0.20
 
-        bond_option = BondOption(bond, expiry_dt, strike_price, option_type)
+        bond_option = BondOption(bond, expiry_dt, strike_price, opt_type)
         model = BDTTree(sigma, num_time_steps)
         v = bond_option.value(settle_dt, discount_curve, model)
         test_cases.print("EUROPEAN CALL - BK", strike_price, v)
 
-    ###########################################################################
-
-    option_type = OptionTypes.AMERICAN_CALL
+    opt_type = OptionTypes.AMERICAN_CALL
 
     price = bond.dirty_price_from_discount_curve(settle_dt, discount_curve)
     test_cases.header("LABEL", "VALUE")
@@ -96,7 +90,7 @@ def test_BondOption():
 
         sigma = 0.20
 
-        bond_option = BondOption(bond, expiry_dt, strike_price, option_type)
+        bond_option = BondOption(bond, expiry_dt, strike_price, opt_type)
         model = BDTTree(sigma, num_time_steps)
         v = bond_option.value(settle_dt, discount_curve, model)
         test_cases.print("AMERICAN CALL - BK", strike_price, v)
@@ -105,14 +99,12 @@ def test_BondOption():
 
         sigma = 0.20
 
-        bond_option = BondOption(bond, expiry_dt, strike_price, option_type)
+        bond_option = BondOption(bond, expiry_dt, strike_price, opt_type)
         model = BDTTree(sigma, num_time_steps)
         v = bond_option.value(settle_dt, discount_curve, model)
         test_cases.print("AMERICAN CALL - BK", strike_price, v)
 
-    ###########################################################################
-
-    option_type = OptionTypes.EUROPEAN_PUT
+    opt_type = OptionTypes.EUROPEAN_PUT
 
     price = bond.dirty_price_from_discount_curve(settle_dt, discount_curve)
 
@@ -120,7 +112,7 @@ def test_BondOption():
 
         sigma = 0.01
 
-        bond_option = BondOption(bond, expiry_dt, strike_price, option_type)
+        bond_option = BondOption(bond, expiry_dt, strike_price, opt_type)
         model = BDTTree(sigma, num_time_steps)
         v = bond_option.value(settle_dt, discount_curve, model)
         test_cases.print("EUROPEAN PUT - BK", strike_price, v)
@@ -129,14 +121,12 @@ def test_BondOption():
 
         sigma = 0.20
 
-        bond_option = BondOption(bond, expiry_dt, strike_price, option_type)
+        bond_option = BondOption(bond, expiry_dt, strike_price, opt_type)
         model = BDTTree(sigma, num_time_steps)
         v = bond_option.value(settle_dt, discount_curve, model)
         test_cases.print("EUROPEAN PUT - BK", strike_price, v)
 
-    ###########################################################################
-
-    option_type = OptionTypes.AMERICAN_PUT
+    opt_type = OptionTypes.AMERICAN_PUT
 
     price = bond.dirty_price_from_discount_curve(settle_dt, discount_curve)
 
@@ -144,7 +134,7 @@ def test_BondOption():
 
         sigma = 0.02
 
-        bond_option = BondOption(bond, expiry_dt, strike_price, option_type)
+        bond_option = BondOption(bond, expiry_dt, strike_price, opt_type)
         model = BDTTree(sigma, num_time_steps)
         v = bond_option.value(settle_dt, discount_curve, model)
         test_cases.print("AMERICAN PUT - BK", strike_price, v)
@@ -153,16 +143,16 @@ def test_BondOption():
 
         sigma = 0.20
 
-        bond_option = BondOption(bond, expiry_dt, strike_price, option_type)
+        bond_option = BondOption(bond, expiry_dt, strike_price, opt_type)
         model = BDTTree(sigma, num_time_steps)
         v = bond_option.value(settle_dt, discount_curve, model)
         test_cases.print("AMERICAN PUT - BK", strike_price, v)
 
 
-###############################################################################
+########################################################################################
 
 
-def test_BondOptionAmericanConvergenceONE():
+def test_bond_option_american_convergence_one():
 
     # Build discount curve
     settle_dt = Date(1, 12, 2019)
@@ -180,9 +170,7 @@ def test_BondOptionAmericanConvergenceONE():
     expiry_dt = Date(1, 12, 2020)
     strike_price = 100.0
 
-    test_cases.header(
-        "TIME", "N", "PUT_AMER", "PUT_EUR", "CALL_AME", "CALL_EUR"
-    )
+    test_cases.header("TIME", "N", "PUT_AMER", "PUT_EUR", "CALL_AME", "CALL_EUR")
 
     time_steps = range(30, 100, 1)
 
@@ -192,23 +180,23 @@ def test_BondOptionAmericanConvergenceONE():
 
         start = time.time()
 
-        option_type = OptionTypes.AMERICAN_PUT
-        bond_option1 = BondOption(bond, expiry_dt, strike_price, option_type)
+        opt_type = OptionTypes.AMERICAN_PUT
+        bond_option1 = BondOption(bond, expiry_dt, strike_price, opt_type)
         model = BDTTree(sigma, num_time_steps)
         v1put = bond_option1.value(settle_dt, discount_curve, model)
 
-        option_type = OptionTypes.EUROPEAN_PUT
-        bond_option2 = BondOption(bond, expiry_dt, strike_price, option_type)
+        opt_type = OptionTypes.EUROPEAN_PUT
+        bond_option2 = BondOption(bond, expiry_dt, strike_price, opt_type)
         model = BDTTree(sigma, num_time_steps)
         v2put = bond_option2.value(settle_dt, discount_curve, model)
 
-        option_type = OptionTypes.AMERICAN_CALL
-        bond_option1 = BondOption(bond, expiry_dt, strike_price, option_type)
+        opt_type = OptionTypes.AMERICAN_CALL
+        bond_option1 = BondOption(bond, expiry_dt, strike_price, opt_type)
         model = BDTTree(sigma, num_time_steps)
         v1call = bond_option1.value(settle_dt, discount_curve, model)
 
-        option_type = OptionTypes.EUROPEAN_CALL
-        bond_option2 = BondOption(bond, expiry_dt, strike_price, option_type)
+        opt_type = OptionTypes.EUROPEAN_CALL
+        bond_option2 = BondOption(bond, expiry_dt, strike_price, opt_type)
         model = BDTTree(sigma, num_time_steps)
         v2call = bond_option2.value(settle_dt, discount_curve, model)
 
@@ -219,16 +207,14 @@ def test_BondOptionAmericanConvergenceONE():
         test_cases.print(period, num_time_steps, v1put, v2put, v1call, v2call)
 
 
-###############################################################################
+########################################################################################
 
 
-def test_BondOptionAmericanConvergenceTWO():
+def test_bond_option_american_convergence_two():
 
     # Build discount curve
     settle_dt = Date(1, 12, 2019)
-    discount_curve = DiscountCurveFlat(
-        settle_dt, 0.05, FrequencyTypes.CONTINUOUS
-    )
+    discount_curve = DiscountCurveFlat(settle_dt, 0.05, FrequencyTypes.CONTINUOUS)
 
     # Bond details
     issue_dt = Date(1, 9, 2014)
@@ -239,63 +225,55 @@ def test_BondOptionAmericanConvergenceTWO():
     bond = Bond(issue_dt, maturity_dt, coupon, freq_type, dc_type)
     expiry_dt = settle_dt.add_tenor("18m")
 
-    spot_value = bond.dirty_price_from_discount_curve(
-        settle_dt, discount_curve
-    )
+    spot_value = bond.dirty_price_from_discount_curve(settle_dt, discount_curve)
     test_cases.header("LABEL", "VALUE")
     test_cases.print("BOND PRICE", spot_value)
 
-    test_cases.header(
-        "TIME", "N", "EUR_CALL", "AMER_CALL", "EUR_PUT", "AMER_PUT"
-    )
+    test_cases.header("TIME", "N", "EUR_CALL", "AMER_CALL", "EUR_PUT", "AMER_PUT")
 
     sigma = 0.2
     model = BDTTree(sigma)
-    K = 101.0
+    k = 101.0
 
     vec_ec = []
     vec_ac = []
     vec_ep = []
     vec_ap = []
 
-    if 1 == 1:
-        K = 100.0
-        bkModel = BDTTree(sigma, 100)
-        europeanCallBondOption = BondOption(
-            bond, expiry_dt, K, OptionTypes.EUROPEAN_CALL
+    if True:
+        k = 100.0
+        bk_model = BDTTree(sigma, 100)
+        euro_call_bond_option = BondOption(
+            bond, expiry_dt, k, OptionTypes.EUROPEAN_CALL
         )
 
-        v_ec = europeanCallBondOption.value(settle_dt, discount_curve, model)
+        v_ec = euro_call_bond_option.value(settle_dt, discount_curve, model)
         test_cases.header("LABEL", "VALUE")
         test_cases.print("OPTION", v_ec)
 
-    num_stepsVector = range(100, 100, 1)  # should be 100-400
+    num_steps_vector = range(100, 100, 1)  # should be 100-400
 
-    for num_steps in num_stepsVector:
+    for num_steps in num_steps_vector:
 
-        bkModel = BDTTree(sigma, num_steps)
+        bk_model = BDTTree(sigma, num_steps)
 
         start = time.time()
 
-        europeanCallBondOption = BondOption(
-            bond, expiry_dt, K, OptionTypes.EUROPEAN_CALL
+        euro_call_bond_option = BondOption(
+            bond, expiry_dt, k, OptionTypes.EUROPEAN_CALL
         )
-        v_ec = europeanCallBondOption.value(settle_dt, discount_curve, bkModel)
+        v_ec = euro_call_bond_option.value(settle_dt, discount_curve, bk_model)
 
-        americanCallBondOption = BondOption(
-            bond, expiry_dt, K, OptionTypes.AMERICAN_CALL
+        amer_call_bond_option = BondOption(
+            bond, expiry_dt, k, OptionTypes.AMERICAN_CALL
         )
-        v_ac = americanCallBondOption.value(settle_dt, discount_curve, bkModel)
+        v_ac = amer_call_bond_option.value(settle_dt, discount_curve, bk_model)
 
-        europeanPutBondOption = BondOption(
-            bond, expiry_dt, K, OptionTypes.EUROPEAN_PUT
-        )
-        v_ep = europeanPutBondOption.value(settle_dt, discount_curve, bkModel)
+        euro_put_bond_option = BondOption(bond, expiry_dt, k, OptionTypes.EUROPEAN_PUT)
+        v_ep = euro_put_bond_option.value(settle_dt, discount_curve, bk_model)
 
-        americanPutBondOption = BondOption(
-            bond, expiry_dt, K, OptionTypes.AMERICAN_PUT
-        )
-        v_ap = americanPutBondOption.value(settle_dt, discount_curve, bkModel)
+        amer_put_bond_option = BondOption(bond, expiry_dt, k, OptionTypes.AMERICAN_PUT)
+        v_ap = amer_put_bond_option.value(settle_dt, discount_curve, bk_model)
 
         end = time.time()
         period = end - start
@@ -307,30 +285,29 @@ def test_BondOptionAmericanConvergenceTWO():
         vec_ep.append(v_ep)
         vec_ap.append(v_ap)
 
-    if plotGraphs:
+    if PLOT_GRAPHS:
 
         plt.figure()
-        plt.plot(num_stepsVector, vec_ec, label="European Call")
+        plt.plot(num_steps_vector, vec_ec, label="European Call")
         plt.legend()
 
         plt.figure()
-        plt.plot(num_stepsVector, vec_ac, label="American Call")
+        plt.plot(num_steps_vector, vec_ac, label="American Call")
         plt.legend()
 
         plt.figure()
-        plt.plot(num_stepsVector, vec_ep, label="European Put")
+        plt.plot(num_steps_vector, vec_ep, label="European Put")
         plt.legend()
 
         plt.figure()
-        plt.plot(num_stepsVector, vec_ap, label="American Put")
+        plt.plot(num_steps_vector, vec_ap, label="American Put")
         plt.legend()
 
 
-###############################################################################
-###############################################################################
+########################################################################################
 
 
-def test_BondOptionZEROVOLConvergence():
+def test_bond_option_zerovol_convergence():
 
     # Build discount curve
     settle_dt = Date(1, 12, 2019)  # CHANGED
@@ -350,19 +327,13 @@ def test_BondOptionZEROVOLConvergence():
     #    print("EXPIRY:", expiry_dt)
 
     df_expiry = discount_curve.df(expiry_dt)
-    spot_clean_value = bond.clean_price_from_discount_curve(
-        settle_dt, discount_curve
-    )
-    fwd_clean_value = bond.clean_price_from_discount_curve(
-        expiry_dt, discount_curve
-    )
+    spot_clean_value = bond.clean_price_from_discount_curve(settle_dt, discount_curve)
+    fwd_clean_value = bond.clean_price_from_discount_curve(expiry_dt, discount_curve)
     #    print("BOND SpotCleanBondPx", spot_clean_value)
     #    print("BOND FwdCleanBondPx", fwd_clean_value)
     #    print("BOND Accrued:", bond.accrued_int)
 
-    spot_clean_value = bond.clean_price_from_discount_curve(
-        settle_dt, discount_curve
-    )
+    spot_clean_value = bond.clean_price_from_discount_curve(settle_dt, discount_curve)
 
     test_cases.header(
         "STRIKE",
@@ -393,28 +364,20 @@ def test_BondOptionZEROVOLConvergence():
             sigma = 0.0000001
             model = BDTTree(sigma, num_steps)
 
-            option_type = OptionTypes.EUROPEAN_CALL
-            bond_option1 = BondOption(
-                bond, expiry_dt, strike_price, option_type
-            )
+            opt_type = OptionTypes.EUROPEAN_CALL
+            bond_option1 = BondOption(bond, expiry_dt, strike_price, opt_type)
             v1 = bond_option1.value(settle_dt, discount_curve, model)
 
-            option_type = OptionTypes.AMERICAN_CALL
-            bond_option2 = BondOption(
-                bond, expiry_dt, strike_price, option_type
-            )
+            opt_type = OptionTypes.AMERICAN_CALL
+            bond_option2 = BondOption(bond, expiry_dt, strike_price, opt_type)
             v2 = bond_option2.value(settle_dt, discount_curve, model)
 
-            option_type = OptionTypes.EUROPEAN_PUT
-            bond_option3 = BondOption(
-                bond, expiry_dt, strike_price, option_type
-            )
+            opt_type = OptionTypes.EUROPEAN_PUT
+            bond_option3 = BondOption(bond, expiry_dt, strike_price, opt_type)
             v3 = bond_option3.value(settle_dt, discount_curve, model)
 
-            option_type = OptionTypes.AMERICAN_PUT
-            bond_option4 = BondOption(
-                bond, expiry_dt, strike_price, option_type
-            )
+            opt_type = OptionTypes.AMERICAN_PUT
+            bond_option4 = BondOption(bond, expiry_dt, strike_price, opt_type)
             v4 = bond_option4.value(settle_dt, discount_curve, model)
 
             test_cases.print(
@@ -431,11 +394,10 @@ def test_BondOptionZEROVOLConvergence():
             )
 
 
-###############################################################################
+########################################################################################
 
-
-test_BondOptionZEROVOLConvergence()
-test_BondOption()
-# test_BondOptionAmericanConvergenceONE()
-test_BondOptionAmericanConvergenceTWO()
-test_cases.compareTestCases()
+test_bond_option_zerovol_convergence()
+test_bond_option()
+# test_bond_option_american_convergence_one()
+test_bond_option_american_convergence_two()
+test_cases.compare_test_cases()

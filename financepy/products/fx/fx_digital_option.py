@@ -2,12 +2,14 @@
 # Copyright (C) 2018, 2019, 2020 Dominic O'Kane
 ##############################################################################
 
+from typing import Union
+
 import numpy as np
 
 
-from ...utils.math import n_vect  # n_prime_vect
+from ...utils.math import normcdf_vect  # normcdf_prime_vect
 
-from ...utils.global_vars import g_days_in_year
+from ...utils.global_vars import G_DAYS_IN_YEARS
 from ...utils.error import FinError
 
 # from ...products.equity.EquityOption import FinOption
@@ -18,17 +20,18 @@ from ...models.black_scholes import BlackScholes
 from ...utils.helpers import check_argument_types
 from ...utils.global_types import OptionTypes
 
-###############################################################################
+########################################################################################
 
 
 class FXDigitalOption:
+    """FX Digital Option"""
 
     def __init__(
         self,
         expiry_dt: Date,
-        strike_fx_rate: (float, np.ndarray),
+        strike_fx_rate: Union[float, np.ndarray],
         currency_pair: str,  # FORDOM
-        option_type: (OptionTypes, list),
+        opt_type: Union[OptionTypes, list],
         notional: float,
         prem_currency: str,
         spot_days: int = 0,
@@ -63,20 +66,17 @@ class FXDigitalOption:
         self.for_name = self.currency_pair[0:3]
         self.dom_name = self.currency_pair[3:6]
 
-        if prem_currency != self.dom_name and prem_currency != self.for_name:
+        if prem_currency not in [self.dom_name, self.for_name]:
             raise FinError("Notional currency not in currency pair.")
 
         self.prem_currency = prem_currency
 
         self.notional = notional
 
-        if (
-            option_type != OptionTypes.DIGITAL_CALL
-            and option_type != OptionTypes.DIGITAL_PUT
-        ):
-            raise FinError("Unknown Digital Option Type:" + option_type)
+        if opt_type not in [OptionTypes.DIGITAL_CALL, OptionTypes.DIGITAL_PUT]:
+            raise FinError("Unknown Digital Option Type:" + opt_type)
 
-        self.option_type = option_type
+        self.opt_type = opt_type
         self.spot_days = spot_days
 
     ###########################################################################
@@ -102,19 +102,15 @@ class FXDigitalOption:
             raise FinError("Valuation date after expiry date.")
 
         if domestic_curve.value_dt != value_dt:
-            raise FinError(
-                "Domestic Curve valuation date not same as valuation date"
-            )
+            raise FinError("Domestic Curve valuation date not same as valuation date")
 
         if foreign_curve.value_dt != value_dt:
-            raise FinError(
-                "Foreign Curve valuation date not same as valuation date"
-            )
+            raise FinError("Foreign Curve valuation date not same as valuation date")
 
         if isinstance(value_dt, Date):
             spot_dt = value_dt.add_weekdays(self.spot_days)
-            t_del = (self.delivery_dt - spot_dt) / g_days_in_year
-            t_exp = (self.expiry_dt - value_dt) / g_days_in_year
+            t_del = (self.delivery_dt - spot_dt) / G_DAYS_IN_YEARS
+            t_exp = (self.expiry_dt - value_dt) / G_DAYS_IN_YEARS
         else:
             t_del = value_dt
             t_exp = t_del
@@ -134,37 +130,37 @@ class FXDigitalOption:
         r_f = -np.log(for_df) / t_del
 
         s0 = spot_fx_rate
-        K = self.strike_fx_rate
+        k = self.strike_fx_rate
 
         if isinstance(model, BlackScholes):
 
             volatility = model.volatility
-            ln_s0_k = np.log(s0 / K)
+            ln_s0_k = np.log(s0 / k)
             den = volatility * np.sqrt(t_exp)
             v2 = volatility * volatility
             mu = r_d - r_f
             d2 = (ln_s0_k + (mu - v2 / 2.0) * t_del) / den
 
             if (
-                self.option_type == OptionTypes.DIGITAL_CALL
+                self.opt_type == OptionTypes.DIGITAL_CALL
                 and self.for_name == self.prem_currency
             ):
-                v = s0 * np.exp(-r_f * t_del) * n_vect(d2)
+                v = s0 * np.exp(-r_f * t_del) * normcdf_vect(d2)
             elif (
-                self.option_type == OptionTypes.DIGITAL_PUT
+                self.opt_type == OptionTypes.DIGITAL_PUT
                 and self.for_name == self.prem_currency
             ):
-                v = s0 * np.exp(-r_f * t_del) * n_vect(-d2)
+                v = s0 * np.exp(-r_f * t_del) * normcdf_vect(-d2)
             elif (
-                self.option_type == OptionTypes.DIGITAL_CALL
+                self.opt_type == OptionTypes.DIGITAL_CALL
                 and self.dom_name == self.prem_currency
             ):
-                v = np.exp(-r_d * t_del) * n_vect(d2)
+                v = np.exp(-r_d * t_del) * normcdf_vect(d2)
             elif (
-                self.option_type == OptionTypes.DIGITAL_PUT
+                self.opt_type == OptionTypes.DIGITAL_PUT
                 and self.dom_name == self.prem_currency
             ):
-                v = np.exp(-r_d * t_del) * n_vect(-d2)
+                v = np.exp(-r_d * t_del) * normcdf_vect(-d2)
             else:
                 raise FinError("Unknown option type")
 
@@ -173,4 +169,4 @@ class FXDigitalOption:
         return v
 
 
-###############################################################################
+########################################################################################

@@ -1,14 +1,22 @@
 from enum import Enum
+from typing import Union
 
 from financepy.utils.error import FinError
 
+########################################################################################
+
 
 class TenorUnit(Enum):
+    """Represents the different units of time in months for a tenor."""
+
     NONE = 0
     DAYS = 1
     WEEKS = 7
     MONTHS = 7 * 4
     YEARS = 12 * 7 * 4
+
+
+########################################################################################
 
 
 class Tenor:
@@ -38,14 +46,10 @@ class Tenor:
 
         tenor_string = tenor_string.upper()
 
-        if (
-            tenor_string == "ON"
-        ):  # overnight - should be used only if spot days = 0
+        if tenor_string == "ON":  # overnight - should be used only if spot days = 0
             self._units = TenorUnit.DAYS
             self._num_periods = 1
-        elif (
-            tenor_string == "TN"
-        ):  # overnight - should be used when spot days > 0
+        elif tenor_string == "TN":  # overnight - should be used when spot days > 0
             self._units = TenorUnit.DAYS
             self._num_periods = 1
         elif tenor_string[-1] == "D":
@@ -63,14 +67,60 @@ class Tenor:
         else:
             raise FinError("Unknown tenor type in " + tenor_string)
 
+    ####################################################################################
+
+    @property
+    def units(self) -> TenorUnit:
+        """Returns the units of the tenor."""
+        return self._units
+
+    ####################################################################################
+
+    @property
+    def num_periods(self) -> int:
+        """Returns the number of periods in the tenor."""
+        return self._num_periods
+
+    ####################################################################################
+
+    def set_units(self, units: TenorUnit):
+        """Set the units for the tenor."""
+        if not isinstance(units, TenorUnit):
+            raise FinError("units must be a TenorUnit")
+        self._units = units
+
+    ####################################################################################
+
+    def set_num_periods(self, num):
+        """Set the number of periods for the tenor."""
+        if not isinstance(num, Union[float, int]):
+            print(num)
+            raise FinError("num_periods must be an integer")
+        self._num_periods = num
+
+    ####################################################################################
+
+    def set(self, num, units: TenorUnit):
+        """Convenience method to set both number and units at once."""
+        self.set_num_periods(num)
+        self.set_units(units)
+
+    ####################################################################################
+
     @classmethod
     def as_tenor(cls, str_or_tenor):
+        """Convert a string or Tenor object to a Tenor object."""
         if isinstance(str_or_tenor, Tenor):
             return str_or_tenor
         return Tenor(str_or_tenor)
 
+    ####################################################################################
+
     def is_valid(self):
+        """Check if the tenor is valid."""
         return self._units != TenorUnit.NONE
+
+    ####################################################################################
 
     def __mul__(self, other: int):
         """Multiply a tenor by an integer
@@ -88,6 +138,8 @@ class Tenor:
 
     # right multiply is the same as left multiply
     __rmul__ = __mul__
+
+    ####################################################################################
 
     def __add__(self, other):
         """Adds two tenors. Use the more fine-grained unit of the two for
@@ -107,6 +159,8 @@ class Tenor:
         res._units = common_unit
         res._num_periods = t1._num_periods + t2._num_periods
         return res
+
+    ####################################################################################
 
     def convert_to_unit(self, new_units: TenorUnit):
         """Convert a tenor to an equivalent tenor in new units. Only
@@ -128,29 +182,28 @@ class Tenor:
 
         if self._units.value < new_units.value:
             raise FinError(
-                f"Cannot convert units from {self._units.name}"
-                + "to {new_units.name}"
+                f"Cannot convert units from {self._units.name} to {new_units.name}"
             )
 
         res = Tenor()
-        res._units = new_units
-        res._num_periods = (
-            self._num_periods * self._units.value / new_units.value
-        )
+        res.set_units(new_units)
+        res.set_num_periods(self._num_periods * self._units.value / new_units.value)
         return res
+
+    ####################################################################################
 
     @classmethod
     def convert_to_same_units(cls, t1_in, t2_in):
         (t1, t2) = (
-            (t1_in, t2_in)
-            if t1_in._units.value <= t2_in._units.value
-            else (t2_in, t1_in)
+            (t1_in, t2_in) if t1_in.units.value <= t2_in.units.value else (t2_in, t1_in)
         )
-        common_unit = t1._units
+        common_unit = t1.units
 
         t1 = t1.convert_to_unit(common_unit)
         t2 = t2.convert_to_unit(common_unit)
         return t1, t2
+
+    ####################################################################################
 
     def __eq__(self, other):
         """Equality in the strict sense, ie the units and the nummber of
@@ -166,13 +219,15 @@ class Tenor:
             True or False depending if teh two tenors are equal
         """
 
-        return (
-            self._units == other._units
-            and self._num_periods == other._num_periods
-        )
+        return self._units == other._units and self._num_periods == other._num_periods
+
+    ####################################################################################
 
     def __repr__(self):
         if self.is_valid():
             return f"{self._num_periods}{self._units.name[0]}"
-        else:
-            return "*Invalid*"
+
+        return "*Invalid*"
+
+
+########################################################################################

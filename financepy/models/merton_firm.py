@@ -1,152 +1,164 @@
-##############################################################################
 # Copyright (C) 2018, 2019, 2020 Dominic O'Kane
-##############################################################################
 
-from ..utils.helpers import label_to_string, check_argument_types
+from typing import Union
 import numpy as np
 
-from scipy.stats import norm
-N = norm.cdf
-
+from ..utils.helpers import label_to_string, check_argument_types
+from ..utils.math import normcdf, normcdf_vect
 
 # TODO: Redesign this class
 
-###############################################################################
+########################################################################################
 
 
-class MertonFirm():
-    """ Implementation of the Merton Firm Value Model according to the original
+from typing import Any
+
+class MertonFirm:
+    """Implementation of the Merton Firm Value Model according to the original
     formulation by Merton with the inputs being the asset value of the firm,
     the liabilities (bond face), the time to maturity in years, the risk-free
-    rate, the asset growth rate and the asset value volatility. """
+    rate, the asset growth rate and the asset value volatility."""
 
-    def __init__(self,
-                 asset_value: (float, list, np.ndarray),
-                 bond_face: (float, list, np.ndarray),
-                 years_to_maturity: (float, list, np.ndarray),
-                 risk_free_rate: (float, list, np.ndarray),
-                 asset_growth_rate: (float, list, np.ndarray),
-                 asset_volatility: (float, list, np.ndarray)):
-        """ Create an object that holds all of the model parameters. These
-        parameters may be vectorised. """
+    ####################################################################################
+
+    def __init__(
+        self,
+        asset_value: Union[float, np.ndarray],
+        bond_face: Union[float, np.ndarray],
+        years_to_maturity: Union[float, np.ndarray],
+        risk_free_rate: Union[float, np.ndarray],
+        asset_growth_rate: Union[float, np.ndarray],
+        asset_volatility: Union[float, np.ndarray],
+    ) -> None:
+        """Create an object that holds all of the model parameters. These
+        parameters may be vectorised."""
 
         check_argument_types(self.__init__, locals())
 
-        self._A = np.array(asset_value)
-        self._L = np.array(bond_face)
+        self._a = np.array(asset_value)
+        self._l = np.array(bond_face)
         self._t = np.array(years_to_maturity)
         self._r = np.array(risk_free_rate)
         self._mu = np.array(asset_growth_rate)
-        self._vA = np.array(asset_volatility)
-        self._D = self.debt_value()
-        self._E = self.equity_value()
-        self._vE = self.equity_vol()
+        self._va = np.array(asset_volatility)
+        self._d = self.debt_value()
+        self._e = self.equity_value()
+        self._ve = self.equity_vol()
 
-###############################################################################
+    ####################################################################################
 
-    def leverage(self):
-        """ Calculate the leverage. """
+    def leverage(self) -> np.ndarray:
+        """Calculate the leverage."""
 
-        lvg = self._A / self._L
+        lvg = self._a / self._l
         return lvg
 
-###############################################################################
+    ####################################################################################
 
-    def asset_value(self):
-        """ Calculate the asset value. """
+    def asset_value(self) -> np.ndarray:
+        """Calculate the asset value."""
 
-        return self._A
+        return self._a
 
-###############################################################################
+    ####################################################################################
 
-    def debt_face_value(self):
-        """ Calculate the asset value. """
+    def debt_face_value(self) -> np.ndarray:
+        """Calculate the asset value."""
 
-        return self._L
+        return self._l
 
-###############################################################################
+    ####################################################################################
 
-    def equity_vol(self):
-        """ Calculate the equity volatility. """
+    def asset_vol(self) -> np.ndarray:
+        """Return the asset volatility."""
 
-        E = self.equity_value()
+        return self._va
 
-        lvg = self._A / self._L
-        sigma_root_t = self._vA * np.sqrt(self._t)
+    ####################################################################################
 
-        d1 = np.log(lvg) + (self._r + 0.5 * self._vA ** 2) * self._t
+    def equity_vol(self) -> np.ndarray:
+        """Calculate the equity volatility."""
+
+        e = self.equity_value()
+
+        lvg = self._a / self._l
+        sigma_root_t = self._va * np.sqrt(self._t)
+
+        d1 = np.log(lvg) + (self._r + 0.5 * self._va**2) * self._t
         d1 = d1 / sigma_root_t
-        evol = (self._A / E) * N(d1) * self._vA
+        evol = (self._a / e) * normcdf_vect(d1) * self._va
         return evol
 
-###############################################################################
+    ####################################################################################
 
-    def equity_value(self):
-        """ Calculate the equity value. """
+    def equity_value(self) -> np.ndarray:
+        """Calculate the equity value."""
 
-        lvg = self._A / self._L
-        sigma_root_t = self._vA * np.sqrt(self._t)
-        d1 = np.log(lvg) + (self._r + 0.5 * self._vA ** 2) * self._t
+        lvg = self._a / self._l
+        sigma_root_t = self._va * np.sqrt(self._t)
+        d1 = np.log(lvg) + (self._r + 0.5 * self._va**2) * self._t
         d1 = d1 / sigma_root_t
         d2 = d1 - sigma_root_t
-        evalue = self._A * N(d1) - self._L * np.exp(-self._r * self._t) * N(d2)
+        evalue = self._a * normcdf_vect(d1) - self._l * np.exp(
+            -self._r * self._t
+        ) * normcdf_vect(d2)
         return evalue
 
-###############################################################################
+    ####################################################################################
 
-    def debt_value(self):
-        """ Calculate the debt value """
+    def debt_value(self) -> np.ndarray:
+        """Calculate the debt value"""
 
-        lvg = self._A / self._L
-        sigma_root_t = self._vA * np.sqrt(self._t)
-        d1 = np.log(lvg) + (self._r + 0.5 * self._vA ** 2) * self._t
+        lvg = self._a / self._l
+        sigma_root_t = self._va * np.sqrt(self._t)
+        d1 = np.log(lvg) + (self._r + 0.5 * self._va**2) * self._t
         d1 = d1 / sigma_root_t
         d2 = d1 - sigma_root_t
-        dvalue = self._A * N(-d1) + self._L * \
-            np.exp(-self._r * self._t) * N(d2)
+        dvalue = self._a * normcdf_vect(-d1) + self._l * np.exp(
+            -self._r * self._t
+        ) * normcdf_vect(d2)
         return dvalue
 
-###############################################################################
+    ####################################################################################
 
-    def credit_spread(self):
-        """ Calculate the credit spread from the debt value. """
+    def credit_spread(self) -> np.ndarray:
+        """Calculate the credit spread from the debt value."""
 
         dvalue = self.debt_value()
-        spd = -(1.0 / self._t) * np.log(dvalue / self._L) - self._r
+        spd = -(1.0 / self._t) * np.log(dvalue / self._l) - self._r
         return spd
 
-###############################################################################
+    ####################################################################################
 
-    def prob_default(self):
-        """ Calculate the default probability. This is not risk-neutral so it
-        uses the real world drift rather than the risk-free rate. """
+    def prob_default(self) -> np.ndarray:
+        """Calculate the default probability. This is not risk-neutral so it
+        uses the real world drift rather than the risk-free rate."""
 
-        lvg = self._A / self._L
-        dd = np.log(lvg) + (self._mu - (self._vA**2)/2.0) * self._t
-        dd = dd / self._vA / np.sqrt(self._t)
-        pd = 1.0 - N(dd)
+        lvg = self._a / self._l
+        dd = np.log(lvg) + (self._mu - (self._va**2) / 2.0) * self._t
+        dd = dd / self._va / np.sqrt(self._t)
+        pd = 1.0 - normcdf_vect(dd)
         return pd
 
-###############################################################################
+    ####################################################################################
 
-    def dist_default(self):
-        """ Calculate the distance to default. This is not risk-neutral so it
-        uses the real world drift rather than the risk-free rate. """
+    def dist_default(self) -> np.ndarray:
+        """Calculate the distance to default. This is not risk-neutral so it
+        uses the real world drift rather than the risk-free rate."""
 
-        lvg = self._A / self._L
-        dd = np.log(lvg) + (self._mu - (self._vA**2)/2.0) * self._t
-        dd = dd / self._vA / np.sqrt(self._t)
+        lvg = self._a / self._l
+        dd = np.log(lvg) + (self._mu - (self._va**2) / 2.0) * self._t
+        dd = dd / self._va / np.sqrt(self._t)
         return dd
 
-###############################################################################
+    ####################################################################################
 
-    def __repr__(self):
+    def __repr__(self) -> str:
+
         s = label_to_string("OBJECT TYPE", type(self).__name__)
-        s += label_to_string("ASSET VALUE", self._A)
-        s += label_to_string("BOND FACE", self._L)
+        s += label_to_string("ASSET VALUE", self._a)
+        s += label_to_string("BOND FACE", self._l)
         s += label_to_string("YEARS TO MATURITY", self._t)
         s += label_to_string("ASSET GROWTH", self._mu)
-        s += label_to_string("ASSET VOLATILITY", self._vA)
+        s += label_to_string("ASSET VOLATILITY", self._va)
         return s
-
-###############################################################################

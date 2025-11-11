@@ -2,12 +2,14 @@
 # Copyright (C) 2018, 2019, 2020 Dominic O'Kane
 ##############################################################################
 
+from typing import Union
+
 import numpy as np
 from numba import njit
 
 # from scipy import optimize
 from ...utils.date import Date
-from ...utils.global_vars import g_days_in_year
+from ...utils.global_vars import G_DAYS_IN_YEARS
 from ...utils.error import FinError
 from ...utils.global_types import OptionTypes
 from ...utils.helpers import check_argument_types, label_to_string
@@ -31,13 +33,13 @@ from ...models.black_scholes_mc import _value_mc_numba_only
 from ...models.black_scholes_mc import _value_mc_numpy_only
 from ...models.black_scholes_mc import _value_mc_numba_parallel
 
-###############################################################################
+########################################################################################
 
 
 @njit(fastmath=True, cache=True)
 def _f(v, args):
 
-    option_type_value = int(args[0])
+    opt_type_value = int(args[0])
     t_exp = args[1]
     s0 = args[2]
     r = args[3]
@@ -45,12 +47,12 @@ def _f(v, args):
     k = args[5]
     price = args[6]
 
-    obj_fn = bs_value(s0, t_exp, k, r, q, v, option_type_value)
+    obj_fn = bs_value(s0, t_exp, k, r, q, v, opt_type_value)
     obj_fn = obj_fn - price
     return obj_fn
 
 
-###############################################################################
+########################################################################################
 
 
 def _fvega(v, *args):
@@ -62,11 +64,11 @@ def _fvega(v, *args):
     q = args[4]
     k = args[5]
 
-    fprime = bs_vega(s0, t_exp, k, r, q, v, self.option_type.value)
+    fprime = bs_vega(s0, t_exp, k, r, q, v, self.opt_type.value)
     return fprime
 
 
-###############################################################################
+########################################################################################
 
 
 class EquityVanillaOption:
@@ -75,9 +77,9 @@ class EquityVanillaOption:
 
     def __init__(
         self,
-        expiry_dt: (Date, list),
-        strike_price: (float, np.ndarray),
-        option_type: (OptionTypes, list),
+        expiry_dt: Union[Date, list],
+        strike_price: Union[float, np.ndarray],
+        opt_type: Union[OptionTypes, list],
         num_options: float = 1.0,
     ):
         """Create the Equity Vanilla option object by specifying the expiry
@@ -85,19 +87,19 @@ class EquityVanillaOption:
 
         check_argument_types(self.__init__, locals())
 
-        if isinstance(option_type, OptionTypes):
-            option_type_value = option_type.value
-        elif isinstance(option_type, list):
-            option_type_value = []
-            for opt in option_type:
-                option_type_value.append(opt.value)
-            option_type_value = np.array(option_type_value)
+        if isinstance(opt_type, OptionTypes):
+            opt_type_value = opt_type.value
+        elif isinstance(opt_type, list):
+            opt_type_value = []
+            for opt in opt_type:
+                opt_type_value.append(opt.value)
+            opt_type_value = np.array(opt_type_value)
 
-        self.option_type_value = option_type_value
+        self.opt_type_value = opt_type_value
 
         self.expiry_dt = expiry_dt
         self.strike_price = strike_price
-        self.option_type = option_type
+        self.opt_type = opt_type
         self.num_options = num_options
         self.t_exp = None
 
@@ -105,8 +107,8 @@ class EquityVanillaOption:
 
     def intrinsic(
         self,
-        value_dt: (Date, list),
-        stock_price: (np.ndarray, float),
+        value_dt: Union[Date, list],
+        stock_price: Union[np.ndarray, float],
         discount_curve: DiscountCurve,
         dividend_curve: DiscountCurve,
     ):
@@ -116,11 +118,11 @@ class EquityVanillaOption:
             raise FinError("Valuation date is not a Date")
 
         if isinstance(self.expiry_dt, Date):
-            t_exp = (self.expiry_dt - value_dt) / g_days_in_year
+            t_exp = (self.expiry_dt - value_dt) / G_DAYS_IN_YEARS
         elif isinstance(self.expiry_dt, list):
             t_exp = []
             for exp_dt in self.expiry_dt:
-                t = (exp_dt - value_dt) / g_days_in_year
+                t = (exp_dt - value_dt) / G_DAYS_IN_YEARS
             t_exp.append(t)
             t_exp = np.array(t_exp)
         else:
@@ -139,9 +141,7 @@ class EquityVanillaOption:
 
         k = self.strike_price
 
-        intrinsic_value = bs_intrinsic(
-            s0, t_exp, k, r, q, self.option_type_value
-        )
+        intrinsic_value = bs_intrinsic(s0, t_exp, k, r, q, self.opt_type_value)
 
         intrinsic_value = intrinsic_value * self.num_options
         return intrinsic_value
@@ -150,8 +150,8 @@ class EquityVanillaOption:
 
     def value(
         self,
-        value_dt: (Date, list),
-        stock_price: (np.ndarray, float),
+        value_dt: Union[Date, list],
+        stock_price: Union[np.ndarray, float],
         discount_curve: DiscountCurve,
         dividend_curve: DiscountCurve,
         model: Model,
@@ -178,11 +178,11 @@ class EquityVanillaOption:
             )
 
         if isinstance(self.expiry_dt, Date):
-            t_exp = (self.expiry_dt - value_dt) / g_days_in_year
+            t_exp = (self.expiry_dt - value_dt) / G_DAYS_IN_YEARS
         elif isinstance(self.expiry_dt, list):
             t_exp = []
             for exp_dt in self.expiry_dt:
-                t = (exp_dt - value_dt) / g_days_in_year
+                t = (exp_dt - value_dt) / G_DAYS_IN_YEARS
             t_exp.append(t)
             t_exp = np.array(t_exp)
         else:
@@ -215,7 +215,7 @@ class EquityVanillaOption:
         if isinstance(model, BlackScholes):
 
             v = model.volatility
-            value = bs_value(s0, t_exp, k, r, q, v, self.option_type_value)
+            value = bs_value(s0, t_exp, k, r, q, v, self.opt_type_value)
 
         else:
             raise FinError("Unknown Model Type")
@@ -236,7 +236,7 @@ class EquityVanillaOption:
         """Calculate the analytical delta of a European vanilla option."""
 
         if isinstance(value_dt, Date):
-            t_exp = (self.expiry_dt - value_dt) / g_days_in_year
+            t_exp = (self.expiry_dt - value_dt) / G_DAYS_IN_YEARS
         else:
             t_exp = value_dt
 
@@ -262,7 +262,7 @@ class EquityVanillaOption:
         if isinstance(model, BlackScholes):
 
             v = model.volatility
-            delta = bs_delta(s0, t_exp, k, r, q, v, self.option_type_value)
+            delta = bs_delta(s0, t_exp, k, r, q, v, self.opt_type_value)
 
         else:
             raise FinError("Unknown Model Type")
@@ -282,7 +282,7 @@ class EquityVanillaOption:
         """Calculate the analytical gamma of a European vanilla option."""
 
         if isinstance(value_dt, Date):
-            t_exp = (self.expiry_dt - value_dt) / g_days_in_year
+            t_exp = (self.expiry_dt - value_dt) / G_DAYS_IN_YEARS
         else:
             t_exp = value_dt
 
@@ -307,7 +307,7 @@ class EquityVanillaOption:
         if isinstance(model, BlackScholes):
 
             v = model.volatility
-            gamma = bs_gamma(s0, t_exp, k, r, q, v, self.option_type_value)
+            gamma = bs_gamma(s0, t_exp, k, r, q, v, self.opt_type_value)
 
         else:
             raise FinError("Unknown Model Type")
@@ -327,7 +327,7 @@ class EquityVanillaOption:
         """Calculate the analytical vega of a European vanilla option."""
 
         if isinstance(value_dt, Date):
-            t_exp = (self.expiry_dt - value_dt) / g_days_in_year
+            t_exp = (self.expiry_dt - value_dt) / G_DAYS_IN_YEARS
         else:
             t_exp = value_dt
 
@@ -351,7 +351,7 @@ class EquityVanillaOption:
         if isinstance(model, BlackScholes):
 
             v = model.volatility
-            vega = bs_vega(s0, t_exp, k, r, q, v, self.option_type_value)
+            vega = bs_vega(s0, t_exp, k, r, q, v, self.opt_type_value)
 
         else:
             raise FinError("Unknown Model Type")
@@ -371,7 +371,7 @@ class EquityVanillaOption:
         """Calculate the analytical theta of a European vanilla option."""
 
         if isinstance(value_dt, Date):
-            t_exp = (self.expiry_dt - value_dt) / g_days_in_year
+            t_exp = (self.expiry_dt - value_dt) / G_DAYS_IN_YEARS
         else:
             t_exp = value_dt
 
@@ -394,7 +394,7 @@ class EquityVanillaOption:
 
         if isinstance(model, BlackScholes):
             v = model.volatility
-            theta = bs_theta(s0, t_exp, k, r, q, v, self.option_type_value)
+            theta = bs_theta(s0, t_exp, k, r, q, v, self.opt_type_value)
         else:
             raise FinError("Unknown Model Type")
 
@@ -413,7 +413,7 @@ class EquityVanillaOption:
         """Calculate the analytical rho of a European vanilla option."""
 
         if isinstance(value_dt, Date):
-            t_exp = (self.expiry_dt - value_dt) / g_days_in_year
+            t_exp = (self.expiry_dt - value_dt) / G_DAYS_IN_YEARS
         else:
             t_exp = value_dt
 
@@ -436,7 +436,7 @@ class EquityVanillaOption:
 
         if isinstance(model, BlackScholes):
             v = model.volatility
-            rho = bs_rho(s0, t_exp, k, r, q, v, self.option_type_value)
+            rho = bs_rho(s0, t_exp, k, r, q, v, self.opt_type_value)
         else:
             raise FinError("Unknown Model Type")
 
@@ -455,7 +455,7 @@ class EquityVanillaOption:
         """Calculate the analytical vanna of a European vanilla option."""
 
         if isinstance(value_dt, Date):
-            t_exp = (self.expiry_dt - value_dt) / g_days_in_year
+            t_exp = (self.expiry_dt - value_dt) / G_DAYS_IN_YEARS
         else:
             t_exp = value_dt
 
@@ -478,7 +478,7 @@ class EquityVanillaOption:
 
         if isinstance(model, BlackScholes):
             v = model.volatility
-            vanna = bs_vanna(s0, t_exp, k, r, q, v, self.option_type_value)
+            vanna = bs_vanna(s0, t_exp, k, r, q, v, self.opt_type_value)
         else:
             raise FinError("Unknown Model Type")
 
@@ -489,7 +489,7 @@ class EquityVanillaOption:
     def implied_volatility(
         self,
         value_dt: Date,
-        stock_price: (float, list, np.ndarray),
+        stock_price: Union[float, list, np.ndarray],
         discount_curve: DiscountCurve,
         dividend_curve: DiscountCurve,
         price,
@@ -497,7 +497,7 @@ class EquityVanillaOption:
         """Calculate the Black-Scholes implied volatility of a European
         vanilla option."""
 
-        t_exp = (self.expiry_dt - value_dt) / g_days_in_year
+        t_exp = (self.expiry_dt - value_dt) / G_DAYS_IN_YEARS
 
         if t_exp < 1.0 / 365.0:
             print("Expiry time is too close to zero.")
@@ -513,7 +513,7 @@ class EquityVanillaOption:
         s0 = stock_price
 
         sigma = bs_implied_volatility(
-            s0, t_exp, k, r, q, price, self.option_type_value
+            s0, t_exp, k, r, q, price, self.opt_type_value
         )
 
         return sigma
@@ -532,7 +532,7 @@ class EquityVanillaOption:
         use_sobol: int = 0,
     ):
 
-        t_exp = (self.expiry_dt - value_dt) / g_days_in_year
+        t_exp = (self.expiry_dt - value_dt) / G_DAYS_IN_YEARS
 
         df = discount_curve.df(self.expiry_dt)
         r = -np.log(df) / t_exp
@@ -546,7 +546,7 @@ class EquityVanillaOption:
             stock_price,
             t_exp,
             self.strike_price,
-            self.option_type.value,
+            self.opt_type.value,
             r,
             q,
             vol,
@@ -571,7 +571,7 @@ class EquityVanillaOption:
         use_sobol: int = 0,
     ):
 
-        t_exp = (self.expiry_dt - value_dt) / g_days_in_year
+        t_exp = (self.expiry_dt - value_dt) / G_DAYS_IN_YEARS
 
         df = discount_curve.df(self.expiry_dt)
         r = -np.log(df) / t_exp
@@ -585,7 +585,7 @@ class EquityVanillaOption:
             stock_price,
             t_exp,
             self.strike_price,
-            self.option_type_value,
+            self.opt_type_value,
             r,
             q,
             vol,
@@ -610,7 +610,7 @@ class EquityVanillaOption:
         use_sobol: int = 0,
     ):
 
-        t_exp = (self.expiry_dt - value_dt) / g_days_in_year
+        t_exp = (self.expiry_dt - value_dt) / G_DAYS_IN_YEARS
 
         df = discount_curve.df(self.expiry_dt)
         r = -np.log(df) / t_exp
@@ -624,7 +624,7 @@ class EquityVanillaOption:
             stock_price,
             t_exp,
             self.strike_price,
-            self.option_type_value,
+            self.opt_type_value,
             r,
             q,
             vol,
@@ -651,7 +651,7 @@ class EquityVanillaOption:
         use_sobol: int = 0,
     ):
 
-        t_exp = (self.expiry_dt - value_dt) / g_days_in_year
+        t_exp = (self.expiry_dt - value_dt) / G_DAYS_IN_YEARS
 
         df = discount_curve.df(self.expiry_dt)
         r = -np.log(df) / t_exp
@@ -665,7 +665,7 @@ class EquityVanillaOption:
             stock_price,
             t_exp,
             self.strike_price,
-            self.option_type_value,
+            self.opt_type_value,
             r,
             q,
             vol,
@@ -690,7 +690,7 @@ class EquityVanillaOption:
         use_sobol: int = 0,
     ):
 
-        t_exp = (self.expiry_dt - value_dt) / g_days_in_year
+        t_exp = (self.expiry_dt - value_dt) / G_DAYS_IN_YEARS
 
         df = discount_curve.df(self.expiry_dt)
         r = -np.log(df) / t_exp
@@ -704,7 +704,7 @@ class EquityVanillaOption:
             stock_price,
             t_exp,
             self.strike_price,
-            self.option_type.value,
+            self.opt_type.value,
             r,
             q,
             vol,
@@ -731,7 +731,7 @@ class EquityVanillaOption:
         """Value European style call or put option using Monte Carlo. This is
         mainly for educational purposes. Sobol numbers can be used."""
 
-        t_exp = (self.expiry_dt - value_dt) / g_days_in_year
+        t_exp = (self.expiry_dt - value_dt) / G_DAYS_IN_YEARS
 
         df = discount_curve.df(self.expiry_dt)
         r = -np.log(df) / t_exp
@@ -745,7 +745,7 @@ class EquityVanillaOption:
             stock_price,
             t_exp,
             self.strike_price,
-            self.option_type_value,
+            self.opt_type_value,
             r,
             q,
             vol,
@@ -762,7 +762,7 @@ class EquityVanillaOption:
         s = label_to_string("OBJECT TYPE", type(self).__name__)
         s += label_to_string("EXPIRY DATE", self.expiry_dt)
         s += label_to_string("STRIKE PRICE", self.strike_price)
-        s += label_to_string("OPTION TYPE VALUE", self.option_type)
+        s += label_to_string("OPTION TYPE VALUE", self.opt_type)
         s += label_to_string("NUMBER", self.num_options, "")
         return s
 
@@ -773,4 +773,4 @@ class EquityVanillaOption:
         print(self)
 
 
-###############################################################################
+########################################################################################
