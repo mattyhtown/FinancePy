@@ -43,16 +43,14 @@ class TradingEnvironment:
         Parameters
         ----------
         action : int
-            ``1`` to buy one unit, ``-1`` to sell one unit and ``0`` to hold.
+            Number of units to buy (positive) or sell (negative). ``0`` means no
+            trade.
         """
         price = self.data.loc[self.current_step, "Close"]
 
-        if action == 1:
-            self.position += 1
-            self.cash -= price
-        elif action == -1:
-            self.position -= 1
-            self.cash += price
+        if action != 0:
+            self.position += action
+            self.cash -= price * action
 
         portfolio_value = self.cash + self.position * price
         self.history.append(
